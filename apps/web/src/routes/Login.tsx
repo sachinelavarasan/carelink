@@ -38,7 +38,7 @@ export default function Login() {
   }
 
   return (
-    <AuthLayout title="Sign in to CareLink">
+    <AuthLayout title="Sign in">
       {error && <Notice kind="error">{error}</Notice>}
       <form onSubmit={onSubmit}>
         <FieldGroup>
