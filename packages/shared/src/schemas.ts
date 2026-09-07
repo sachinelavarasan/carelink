@@ -10,6 +10,18 @@ const isoDate = z.string().datetime({ offset: true });
 const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'expected HH:mm');
 const cuid = z.string().min(1);
 
+/** One prescribable medicine line — shared by prescription items and a
+ *  doctor's saved "regular medicines". */
+export const medicineItemSchema = z.object({
+  drugName: z.string().trim().min(1).max(200),
+  strength: z.string().trim().max(60).optional(),
+  form: z.string().trim().max(60).optional(),
+  frequency: z.string().trim().min(1).max(120),
+  durationDays: z.number().int().min(1).max(365),
+  instructions: z.string().trim().max(500).optional(),
+});
+export type MedicineItem = z.infer<typeof medicineItemSchema>;
+
 /* ------------------------------------------------------------------ users */
 
 export const userSchema = z.object({
@@ -86,6 +98,8 @@ export const doctorProfileSchema = z.object({
   bio: z.string().max(2000).optional(),
   consultationFeeInr: z.number().int().nonnegative(),
   clinicName: z.string().max(200).optional(),
+  /** Reusable medicine lines the doctor can drop into a prescription. */
+  favoriteMedicines: z.array(medicineItemSchema).max(50).default([]),
 });
 export type DoctorProfileInput = z.infer<typeof doctorProfileSchema>;
 
@@ -350,14 +364,7 @@ export type VideoSession = z.infer<typeof videoSessionSchema>;
 
 /* ----------------------------------------------------------- prescriptions */
 
-export const prescriptionItemSchema = z.object({
-  drugName: z.string().trim().min(1).max(200),
-  strength: z.string().trim().max(60).optional(),
-  form: z.string().trim().max(60).optional(),
-  frequency: z.string().trim().min(1).max(120),
-  durationDays: z.number().int().min(1).max(365),
-  instructions: z.string().trim().max(500).optional(),
-});
+export const prescriptionItemSchema = medicineItemSchema;
 export type PrescriptionItemInput = z.infer<typeof prescriptionItemSchema>;
 
 /** The doctor's consultation record for one appointment. Created as a DRAFT;

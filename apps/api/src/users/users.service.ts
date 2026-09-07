@@ -141,6 +141,7 @@ export class UsersService {
       bio: row.bio ?? undefined,
       consultationFeeInr: row.consultationFeeInr,
       clinicName: row.clinicName ?? undefined,
+      favoriteMedicines: row.favoriteMedicines ?? [],
       verifiedAt: row.verifiedAt ? row.verifiedAt.toISOString() : null,
       updatedAt: row.updatedAt.toISOString(),
     };

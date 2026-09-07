@@ -108,6 +108,19 @@ export const doctorProfiles = pgTable(
     bio: text('bio'),
     consultationFeeInr: integer('consultation_fee_inr').notNull().default(0),
     clinicName: text('clinic_name'),
+    favoriteMedicines: jsonb('favorite_medicines')
+      .notNull()
+      .default([])
+      .$type<
+        {
+          drugName: string;
+          strength?: string;
+          form?: string;
+          frequency: string;
+          durationDays: number;
+          instructions?: string;
+        }[]
+      >(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({

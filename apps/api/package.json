@@ -12,7 +12,7 @@
     "migration:generate": "drizzle-kit generate --config=src/db/config/migration.config.ts",
     "migration:push": "drizzle-kit push --config=src/db/config/migration.config.ts",
     "migration:drop": "drizzle-kit drop --config=src/db/config/migration.config.ts",
-    "migration:run": "tsx src/db/migrate.ts",
+    "migration:run": "drizzle-kit migrate --config=src/db/config/migration.config.ts",
     "migration:studio": "drizzle-kit studio --config=src/db/config/migration.config.ts",
     "seed:run": "tsx src/db/seed.ts"
   },
