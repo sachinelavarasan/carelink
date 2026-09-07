@@ -4,15 +4,15 @@ import { type FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
 import { Notice } from '../components/Notice';
+import { PrescriptionDetails } from '../components/PrescriptionDetails';
 import { Spinner } from '../components/Spinner';
 import { Button } from '../components/ui/button';
 import { Checkbox } from '../components/ui/checkbox';
 import { Field, FieldLabel } from '../components/ui/field';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
-import { api, apiGet, apiUrl, errMessage, isStatus } from '../lib/api';
+import { api, apiGet, errMessage, isStatus } from '../lib/api';
 import { useAuth } from '../lib/auth';
-import { fmtDateTime } from '../lib/format';
 
 interface ItemRow {
   drugName: string;
@@ -91,7 +91,7 @@ export default function Prescription() {
           onIssued={() => navigate('/appointments')}
         />
       ) : existing && existing.status === 'FINALIZED' ? (
-        <PrescriptionReadOnly rx={existing} />
+        <PrescriptionDetails rx={existing} />
       ) : (
         <Notice kind="warning">
           {isDoctor
@@ -108,76 +108,6 @@ function BackLink({ appointmentId: _appointmentId }: { appointmentId: string }) 
     <Link className="text-sm text-primary underline underline-offset-4" to="/appointments">
       ← Appointments
     </Link>
-  );
-}
-
-/* ------------------------------------------------------------------ read-only */
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  if (children == null || children === '') return null;
-  return (
-    <div className="grid gap-1">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        {title}
-      </h2>
-      <div className="text-sm">{children}</div>
-    </div>
-  );
-}
-
-function PrescriptionReadOnly({ rx }: { rx: PrescriptionView }) {
-  return (
-    <div className="grid gap-4">
-      <div className="rounded-lg border border-border bg-card p-4 text-sm">
-        <p className="font-medium">{rx.doctorName}</p>
-        <p className="text-muted-foreground">{rx.doctorQualifications}</p>
-        <p className="text-muted-foreground">
-          {rx.medicalCouncil} · Reg. No. {rx.registrationNumber}
-        </p>
-        <p className="mt-2 text-muted-foreground">
-          For {rx.patientName} · consultation {fmtDateTime(rx.scheduledStart)}
-        </p>
-        {rx.finalizedAt && (
-          <p className="text-muted-foreground">Issued {fmtDateTime(rx.finalizedAt)}</p>
-        )}
-      </div>
-
-      <Section title="Symptoms">{rx.symptoms}</Section>
-      <Section title="Diagnosis">{rx.diagnosis}</Section>
-
-      <Section title="Rx">
-        <ol className="grid gap-2">
-          {rx.items.map((it) => (
-            <li key={it.id}>
-              <span className="font-medium">
-                {[it.drugName, it.strength, it.form].filter(Boolean).join(' ')}
-              </span>
-              <span className="text-muted-foreground">
-                {' — '}
-                {it.frequency} · {it.durationDays} day{it.durationDays === 1 ? '' : 's'}
-                {it.instructions ? ` · ${it.instructions}` : ''}
-              </span>
-            </li>
-          ))}
-        </ol>
-      </Section>
-
-      <Section title="Advice">{rx.advice}</Section>
-      {rx.notes != null && <Section title="Notes">{rx.notes}</Section>}
-      <Section title="Follow-up">{rx.followUpDate}</Section>
-      <Section title="Drug categories">{rx.drugCategoryFlags.join(', ') || null}</Section>
-
-      {rx.pdfReady && (
-        <div>
-          <Button
-            type="button"
-            onClick={() => window.open(apiUrl(`/prescriptions/${rx.id}/pdf`), '_blank', 'noopener')}
-          >
-            Download PDF
-          </Button>
-        </div>
-      )}
-    </div>
   );
 }
 

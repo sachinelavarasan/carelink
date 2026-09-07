@@ -56,6 +56,22 @@ export function apiUrl(path: string): string {
   return `${BASE_URL}${API_PREFIX}${path}`;
 }
 
+/**
+ * Fetches a PDF through the authenticated axios client (cookies + CSRF) and
+ * opens it in a new tab as a blob URL. Doing it this way rather than
+ * `window.open(apiUrl(...))` avoids the raw top-level navigation, which (a) may
+ * not carry the auth cookie on a cross-site deploy and (b) inherits the API's
+ * strict `Content-Security-Policy`, which stops some browsers rendering the PDF
+ * (blank tab). Any error propagates so the caller can show it.
+ */
+export async function openPdf(path: string): Promise<void> {
+  const res = await api.get<Blob>(path, { responseType: 'blob' });
+  const url = URL.createObjectURL(res.data);
+  window.open(url, '_blank', 'noopener');
+  // Give the new tab time to load before releasing the object URL.
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
 /** Best-effort human message from an axios/unknown error. */
 export function errMessage(err: unknown, fallback: string): string {
   if (axios.isAxiosError(err)) {

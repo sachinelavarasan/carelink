@@ -1,11 +1,13 @@
-import type { AppointmentPage } from '@carelink/shared';
+import { type AppointmentListItem, type AppointmentPage, AppointmentStatus } from '@carelink/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { lazy, Suspense, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
+import { ConsultationRecordButton } from '../components/PrescriptionDetails';
 import { Notice } from '../components/Notice';
 import { Spinner } from '../components/Spinner';
 import { StatusBadge } from '../components/StatusBadge';
+import { Badge } from '../components/ui/badge';
 import { Card, CardContent } from '../components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { api, apiGet, errMessage } from '../lib/api';
@@ -14,8 +16,14 @@ import { fmtDateTime } from '../lib/format';
 
 const AppointmentsCalendar = lazy(() => import('./AppointmentsCalendar'));
 
-type Scope = 'upcoming' | 'past';
+// `completed` is a status filter, not a time window — it shows COMPLETED
+// consultations whether their slot is in the past or (rarely) still ahead; a
+// per-card "Past" / "Scheduled" badge tells them apart.
+type Scope = 'upcoming' | 'completed';
 type Mode = 'list' | 'calendar';
+
+const scopeParams = (scope: Scope): Record<string, unknown> =>
+  scope === 'completed' ? { scope: 'all', status: AppointmentStatus.COMPLETED } : { scope };
 
 export default function Appointments() {
   const { me } = useAuth();
@@ -26,7 +34,7 @@ export default function Appointments() {
 
   const list = useQuery({
     queryKey: ['appointments', scope],
-    queryFn: () => apiGet<AppointmentPage>('/appointments', { scope }),
+    queryFn: () => apiGet<AppointmentPage>('/appointments', scopeParams(scope)),
     enabled: mode === 'list',
   });
 
@@ -117,7 +125,7 @@ function ListView({
       <Tabs value={scope} onValueChange={(v) => onScope(v as Scope)} className="my-3">
         <TabsList>
           <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-          <TabsTrigger value="past">Past</TabsTrigger>
+          <TabsTrigger value="completed">Completed</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -130,58 +138,94 @@ function ListView({
         <p className="text-sm text-muted-foreground">Nothing here.</p>
       )}
 
-      <div className="grid gap-3">
-        {data?.items.map((a) => (
-          <Card key={a.id}>
-            <CardContent className="grid gap-1">
-              <div className="flex items-center justify-between gap-4">
-                <strong className="font-medium">{fmtDateTime(a.scheduledStart)}</strong>
-                <StatusBadge kind="appointment" status={a.status} />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                with {a.counterpartyName}
-                {a.reasonForVisit ? ` — ${a.reasonForVisit}` : ''}
-              </p>
-              {scope === 'upcoming' && a.status === 'CONFIRMED' && (
-                <div className="mt-1 flex items-center gap-4 text-sm">
-                  {a.chatThreadId && (
-                    <>
-                      {/* Chat consultation hidden for now */}
-                      <Link
-                        className="text-primary underline underline-offset-4"
-                        to={`/consult/${a.id}/video`}
-                      >
-                        Video call
-                      </Link>
-                      <Link
-                        className="text-primary underline underline-offset-4"
-                        to={`/appointments/${a.id}/prescription`}
-                      >
-                        Prescription
-                      </Link>
-                    </>
-                  )}
-                  {role === 'PATIENT' && (
-                    <Link
-                      className="text-primary underline underline-offset-4"
-                      to={`/book?reschedule=${a.id}`}
-                    >
-                      Reschedule
-                    </Link>
-                  )}
-                  <button
-                    type="button"
-                    className="text-destructive hover:underline"
-                    onClick={() => onCancel(a.id)}
-                  >
-                    Cancel
-                  </button>
+      <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {data?.items.map((a) =>
+          scope !== 'upcoming' ? (
+            <PastCard key={a.id} a={a} />
+          ) : (
+            <Card key={a.id}>
+              <CardContent className="grid gap-1">
+                <div className="flex items-center justify-between gap-4">
+                  <strong className="font-medium">{fmtDateTime(a.scheduledStart)}</strong>
+                  <StatusBadge kind="appointment" status={a.status} />
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+                <p className="text-sm text-muted-foreground">
+                  with {a.counterpartyName}
+                  {a.reasonForVisit ? ` — ${a.reasonForVisit}` : ''}
+                </p>
+                {a.status === 'CONFIRMED' && (
+                  <div className="mt-1 flex items-center gap-4 text-sm">
+                    {a.chatThreadId && (
+                      <>
+                        {/* Chat consultation hidden for now */}
+                        <Link
+                          className="text-primary underline underline-offset-4"
+                          to={`/consult/${a.id}/video`}
+                        >
+                          Video call
+                        </Link>
+                        <Link
+                          className="text-primary underline underline-offset-4"
+                          to={`/appointments/${a.id}/prescription`}
+                        >
+                          Prescription
+                        </Link>
+                      </>
+                    )}
+                    {role === 'PATIENT' && (
+                      <Link
+                        className="text-primary underline underline-offset-4"
+                        to={`/book?reschedule=${a.id}`}
+                      >
+                        Reschedule
+                      </Link>
+                    )}
+                    <button
+                      type="button"
+                      className="text-destructive hover:underline"
+                      onClick={() => onCancel(a.id)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ),
+        )}
       </div>
     </>
+  );
+}
+
+/* -------------------------------------------------------------- past card */
+
+/** A completed / past appointment. Its full consultation record — the issued
+ *  prescription and everything on it — opens in a sheet. View only. */
+function PastCard({ a }: { a: AppointmentListItem }) {
+  const isPast = new Date(a.scheduledEnd).getTime() < Date.now();
+
+  return (
+    <Card>
+      <CardContent className="grid gap-1">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <strong className="font-medium">{fmtDateTime(a.scheduledStart)}</strong>
+          <div className="flex items-center gap-1.5">
+            <Badge variant={isPast ? 'secondary' : 'outline'}>
+              {isPast ? 'Past' : 'Scheduled'}
+            </Badge>
+            <StatusBadge kind="appointment" status={a.status} />
+          </div>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          with {a.counterpartyName}
+          {a.reasonForVisit ? ` — ${a.reasonForVisit}` : ''}
+        </p>
+
+        <div className="mt-1 justify-self-start">
+          <ConsultationRecordButton appointmentId={a.id} />
+        </div>
+      </CardContent>
+    </Card>
   );
 }
