@@ -45,28 +45,7 @@ export const users = pgTable(
   }),
 );
 
-export const authTokenKind = pgEnum('auth_token_kind', ['EMAIL_VERIFY', 'PASSWORD_RESET']);
-
-/** One row per issued email-verification / password-reset token.
- *  Only the SHA-256 hash of the token is stored. */
-export const authTokens = pgTable(
-  'auth_tokens',
-  {
-    id: uuid('id').primaryKey().defaultRandom(),
-    userId: uuid('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    kind: authTokenKind('kind').notNull(),
-    tokenHash: text('token_hash').notNull(),
-    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-    consumedAt: timestamp('consumed_at', { withTimezone: true }),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => ({
-    tokenHashIdx: uniqueIndex('auth_tokens_token_hash_idx').on(t.tokenHash),
-    byUserKind: index('auth_tokens_user_kind_idx').on(t.userId, t.kind),
-  }),
-);
+// Email-verification and password-reset links are stateless JWTs — no table.
 
 export const patientProfiles = pgTable('patient_profiles', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -416,7 +395,6 @@ export const prescriptionItemsRelations = relations(prescriptionItems, ({ one })
 
 export type DbSchema = {
   users: typeof users;
-  authTokens: typeof authTokens;
   patientProfiles: typeof patientProfiles;
   doctorProfiles: typeof doctorProfiles;
   availabilityRules: typeof availabilityRules;

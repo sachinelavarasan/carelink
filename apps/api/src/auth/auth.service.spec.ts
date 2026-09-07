@@ -17,11 +17,10 @@ function makeService(user: FakeUser | null) {
     sendVerificationEmail: vi.fn().mockResolvedValue(undefined),
     sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
   };
-  const tokens = {
-    issue: vi.fn().mockResolvedValue('token-raw'),
-    consume: vi.fn().mockResolvedValue(null),
+  const jwt = {
+    signAsync: vi.fn().mockResolvedValue('signed.jwt'),
+    verifyAsync: vi.fn().mockResolvedValue({ sub: 'u1', purpose: 'verify' }),
   };
-  const jwt = { signAsync: vi.fn().mockResolvedValue('access.jwt') };
   const config = {
     get: (key: string) =>
       ({
@@ -39,8 +38,8 @@ function makeService(user: FakeUser | null) {
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const service = new AuthService({ db } as any, jwt as any, config as any, tokens as any, mail as any);
-  return { service, mail, tokens, jwt };
+  const service = new AuthService({ db } as any, jwt as any, config as any, mail as any);
+  return { service, mail, jwt };
 }
 
 const baseUser = (over: Partial<FakeUser> = {}): FakeUser => ({
@@ -57,7 +56,7 @@ describe('AuthService.login', () => {
   it('issues an access token for a verified user with the right password', async () => {
     const { service } = makeService(baseUser());
     const result = await service.login({ email: 'p@example.com', password: 'correct-horse' });
-    expect(result).toEqual({ accessToken: 'access.jwt', expiresIn: 604800 });
+    expect(result).toEqual({ accessToken: 'signed.jwt', expiresIn: 604800 });
   });
 
   it('rejects a wrong password with a generic error', async () => {
@@ -88,16 +87,19 @@ describe('AuthService.register', () => {
   });
 
   it('creates the user and emails a verification link for a new address', async () => {
-    const { service, mail, tokens } = makeService(null);
+    const { service, mail, jwt } = makeService(null);
     await service.register({
       email: 'new@example.com',
       password: 'correct-horse',
       fullName: 'New Person',
     });
-    expect(tokens.issue).toHaveBeenCalledWith('new-user', 'EMAIL_VERIFY', expect.any(Number));
+    expect(jwt.signAsync).toHaveBeenCalledWith(
+      { sub: 'new-user', purpose: 'verify' },
+      expect.objectContaining({ expiresIn: '24h' }),
+    );
     expect(mail.sendVerificationEmail).toHaveBeenCalledWith(
       'new@example.com',
-      expect.stringContaining('http://localhost:5173/verify?token=token-raw'),
+      expect.stringContaining('http://localhost:5173/verify?token=signed.jwt'),
     );
   });
 });
