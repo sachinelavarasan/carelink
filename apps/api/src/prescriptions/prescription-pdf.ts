@@ -1,5 +1,21 @@
 import PDFDocument from 'pdfkit';
 
+/*
+ * pdfkit loads its built-in fonts lazily through a subpath-imports wildcard
+ * (`#standard-fonts/*` in its package.json). Serverless file-tracers
+ * (Vercel / @vercel/nft) don't expand that wildcard, so Helvetica.cjs and
+ * HelveticaBold.cjs are dropped from the function bundle and the first render
+ * throws `Cannot find module .../pdfkit/js/standard-fonts/Helvetica.cjs`.
+ * These explicit requires use pdfkit's exports-map subpaths (which Node permits)
+ * and make the tracer copy the files — plus their ./chunks deps — into the
+ * bundle. At runtime each just returns a glyph-metrics table; the require is a
+ * no-op. Keep this list in sync with the font() calls below.
+ */
+/* eslint-disable @typescript-eslint/no-require-imports */
+require('pdfkit/standard-fonts/Helvetica');
+require('pdfkit/standard-fonts/HelveticaBold');
+/* eslint-enable @typescript-eslint/no-require-imports */
+
 export interface PrescriptionPdfData {
   issuedAt: Date;
   doctorName: string;

@@ -1,35 +1,59 @@
-import { DrugCategoryFlag, type PrescriptionView } from '@carelink/shared';
+import {
+  DrugCategoryFlag,
+  type DoctorProfileInput,
+  type MedicineItem,
+  type PrescriptionView,
+} from '@carelink/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { StarIcon } from 'lucide-react';
 import { type FormEvent, useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
+import { BackLink } from '../components/BackLink';
+import {
+  MedicineRows,
+  blankMedicine,
+  fromMedicineItem,
+  medicineLabel,
+  toMedicineItems,
+  type MedicineRow,
+} from '../components/MedicineRows';
 import { Notice } from '../components/Notice';
+import { PrescriptionDetails } from '../components/PrescriptionDetails';
 import { Spinner } from '../components/Spinner';
 import { Button } from '../components/ui/button';
 import { Checkbox } from '../components/ui/checkbox';
 import { Field, FieldLabel } from '../components/ui/field';
 import { Input } from '../components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
-import { api, apiGet, apiUrl, errMessage, isStatus } from '../lib/api';
+import { api, apiGet, errMessage, isStatus } from '../lib/api';
 import { useAuth } from '../lib/auth';
-import { fmtDateTime } from '../lib/format';
 
-interface ItemRow {
-  drugName: string;
-  strength: string;
-  form: string;
-  frequency: string;
-  durationDays: number;
-  instructions: string;
+/** The full DoctorProfileInput rebuilt from `me`, for a favourites PUT. */
+function doctorProfileInput(
+  d: NonNullable<ReturnType<typeof useAuth>['me']>['doctorProfile'],
+  favoriteMedicines: MedicineItem[],
+): DoctorProfileInput | null {
+  if (!d) return null;
+  return {
+    medicalCouncil: d.medicalCouncil,
+    registrationNumber: d.registrationNumber,
+    specializations: d.specializations,
+    qualifications: d.qualifications,
+    yearsExperience: d.yearsExperience,
+    bio: d.bio,
+    consultationFeeInr: d.consultationFeeInr,
+    clinicName: d.clinicName,
+    favoriteMedicines,
+  };
 }
-const blankItem = (): ItemRow => ({
-  drugName: '',
-  strength: '',
-  form: '',
-  frequency: '',
-  durationDays: 5,
-  instructions: '',
-});
 
 const FLAGS = Object.values(DrugCategoryFlag);
 const FLAG_LABEL: Record<string, string> = {
@@ -67,18 +91,16 @@ export default function Prescription() {
   if (rxQ.isError && !missing) {
     return (
       <AppShell>
+        <BackLink to="/appointments">Appointments</BackLink>
         <Notice kind="error">{errMessage(rxQ.error, 'Could not load the prescription')}</Notice>
-        <BackLink appointmentId={appointmentId} />
       </AppShell>
     );
   }
 
   return (
     <AppShell>
-      <div className="mb-2 flex items-baseline justify-between gap-3">
-        <h1 className="text-xl font-semibold">Prescription</h1>
-        <BackLink appointmentId={appointmentId} />
-      </div>
+      <BackLink to="/appointments">Appointments</BackLink>
+      <h1 className="mb-2 text-xl font-semibold">Prescription</h1>
 
       {editable ? (
         <PrescriptionForm
@@ -91,7 +113,7 @@ export default function Prescription() {
           onIssued={() => navigate('/appointments')}
         />
       ) : existing && existing.status === 'FINALIZED' ? (
-        <PrescriptionReadOnly rx={existing} />
+        <PrescriptionDetails rx={existing} />
       ) : (
         <Notice kind="warning">
           {isDoctor
@@ -100,84 +122,6 @@ export default function Prescription() {
         </Notice>
       )}
     </AppShell>
-  );
-}
-
-function BackLink({ appointmentId: _appointmentId }: { appointmentId: string }) {
-  return (
-    <Link className="text-sm text-primary underline underline-offset-4" to="/appointments">
-      ← Appointments
-    </Link>
-  );
-}
-
-/* ------------------------------------------------------------------ read-only */
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  if (children == null || children === '') return null;
-  return (
-    <div className="grid gap-1">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        {title}
-      </h2>
-      <div className="text-sm">{children}</div>
-    </div>
-  );
-}
-
-function PrescriptionReadOnly({ rx }: { rx: PrescriptionView }) {
-  return (
-    <div className="grid gap-4">
-      <div className="rounded-lg border border-border bg-card p-4 text-sm">
-        <p className="font-medium">{rx.doctorName}</p>
-        <p className="text-muted-foreground">{rx.doctorQualifications}</p>
-        <p className="text-muted-foreground">
-          {rx.medicalCouncil} · Reg. No. {rx.registrationNumber}
-        </p>
-        <p className="mt-2 text-muted-foreground">
-          For {rx.patientName} · consultation {fmtDateTime(rx.scheduledStart)}
-        </p>
-        {rx.finalizedAt && (
-          <p className="text-muted-foreground">Issued {fmtDateTime(rx.finalizedAt)}</p>
-        )}
-      </div>
-
-      <Section title="Symptoms">{rx.symptoms}</Section>
-      <Section title="Diagnosis">{rx.diagnosis}</Section>
-
-      <Section title="Rx">
-        <ol className="grid gap-2">
-          {rx.items.map((it) => (
-            <li key={it.id}>
-              <span className="font-medium">
-                {[it.drugName, it.strength, it.form].filter(Boolean).join(' ')}
-              </span>
-              <span className="text-muted-foreground">
-                {' — '}
-                {it.frequency} · {it.durationDays} day{it.durationDays === 1 ? '' : 's'}
-                {it.instructions ? ` · ${it.instructions}` : ''}
-              </span>
-            </li>
-          ))}
-        </ol>
-      </Section>
-
-      <Section title="Advice">{rx.advice}</Section>
-      {rx.notes != null && <Section title="Notes">{rx.notes}</Section>}
-      <Section title="Follow-up">{rx.followUpDate}</Section>
-      <Section title="Drug categories">{rx.drugCategoryFlags.join(', ') || null}</Section>
-
-      {rx.pdfReady && (
-        <div>
-          <Button
-            type="button"
-            onClick={() => window.open(apiUrl(`/prescriptions/${rx.id}/pdf`), '_blank', 'noopener')}
-          >
-            Download PDF
-          </Button>
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -194,14 +138,18 @@ function PrescriptionForm({
   onDone: () => void;
   onIssued: () => void;
 }) {
+  const { me, reload } = useAuth();
+  const favorites = me?.doctorProfile?.favoriteMedicines ?? [];
+
   const [symptoms, setSymptoms] = useState('');
   const [diagnosis, setDiagnosis] = useState('');
   const [advice, setAdvice] = useState('');
   const [notes, setNotes] = useState('');
   const [followUpDate, setFollowUpDate] = useState('');
   const [flags, setFlags] = useState<Set<string>>(new Set());
-  const [items, setItems] = useState<ItemRow[]>([blankItem()]);
+  const [items, setItems] = useState<MedicineRow[]>([blankMedicine()]);
   const [error, setError] = useState<string | null>(null);
+  const [savedFav, setSavedFav] = useState<string | null>(null);
 
   useEffect(() => {
     if (!existing) return;
@@ -212,21 +160,37 @@ function PrescriptionForm({
     setFollowUpDate(existing.followUpDate ?? '');
     setFlags(new Set(existing.drugCategoryFlags));
     setItems(
-      existing.items.length > 0
-        ? existing.items.map((it) => ({
-            drugName: it.drugName,
-            strength: it.strength ?? '',
-            form: it.form ?? '',
-            frequency: it.frequency,
-            durationDays: it.durationDays,
-            instructions: it.instructions ?? '',
-          }))
-        : [blankItem()],
+      existing.items.length > 0 ? existing.items.map(fromMedicineItem) : [blankMedicine()],
     );
   }, [existing]);
 
-  const patchItem = (i: number, p: Partial<ItemRow>) =>
-    setItems((rs) => rs.map((r, idx) => (idx === i ? { ...r, ...p } : r)));
+  function addFavorite(m: MedicineItem) {
+    setItems((rs) => {
+      const trimmed = rs.filter((r) => r.drugName.trim() || r.frequency.trim());
+      return [...trimmed, fromMedicineItem(m)];
+    });
+  }
+
+  async function saveAsRegular(row: MedicineRow) {
+    const one = toMedicineItems([row])[0];
+    if (!one || !me?.doctorProfile) return;
+    const already = favorites.some(
+      (f) => f.drugName.toLowerCase() === one.drugName.toLowerCase() && f.frequency === one.frequency,
+    );
+    const input = doctorProfileInput(
+      me.doctorProfile,
+      already ? favorites : [...favorites, one],
+    );
+    if (!input) return;
+    try {
+      if (!already) await api.put('/me/doctor-profile', input);
+      await reload();
+      setSavedFav(one.drugName);
+      setTimeout(() => setSavedFav(null), 2000);
+    } catch (e) {
+      setError(errMessage(e, 'Could not save the regular medicine'));
+    }
+  }
 
   function buildBody() {
     return {
@@ -236,16 +200,7 @@ function PrescriptionForm({
       notes: notes.trim() || undefined,
       followUpDate: followUpDate || undefined,
       drugCategoryFlags: [...flags],
-      items: items
-        .filter((it) => it.drugName.trim() && it.frequency.trim())
-        .map((it) => ({
-          drugName: it.drugName.trim(),
-          strength: it.strength.trim() || undefined,
-          form: it.form.trim() || undefined,
-          frequency: it.frequency.trim(),
-          durationDays: Number(it.durationDays),
-          instructions: it.instructions.trim() || undefined,
-        })),
+      items: toMedicineItems(items),
     };
   }
 
@@ -291,8 +246,10 @@ function PrescriptionForm({
     saveM.mutate();
   }
 
+  const medCount = toMedicineItems(items).length;
+
   return (
-    <form onSubmit={onSubmit} className="grid gap-4">
+    <form onSubmit={onSubmit} className="grid gap-6 pb-20">
       {existing && (
         <Notice kind="warning">
           Draft — not visible to the patient until you issue it. Issuing renders the PDF and marks
@@ -300,137 +257,129 @@ function PrescriptionForm({
         </Notice>
       )}
       {error && <Notice kind="error">{error}</Notice>}
+      {savedFav && <Notice kind="success">Saved “{savedFav}” to your regular medicines.</Notice>}
 
-      <Field>
-        <FieldLabel>Symptoms</FieldLabel>
-        <Textarea rows={2} value={symptoms} onChange={(e) => setSymptoms(e.target.value)} />
-      </Field>
-      <Field>
-        <FieldLabel>Diagnosis *</FieldLabel>
-        <Textarea
-          rows={2}
-          required
-          value={diagnosis}
-          onChange={(e) => setDiagnosis(e.target.value)}
-        />
-      </Field>
-
-      <div className="grid gap-2">
-        <h2 className="text-sm font-medium">Medicines *</h2>
-        {items.map((it, i) => (
-          <div key={i} className="grid gap-2 rounded-lg border border-border p-3">
-            <div className="flex flex-wrap gap-2">
-              <Input
-                className="min-w-40 flex-1"
-                placeholder="Drug name"
-                value={it.drugName}
-                onChange={(e) => patchItem(i, { drugName: e.target.value })}
-              />
-              <Input
-                className="w-28"
-                placeholder="Strength"
-                value={it.strength}
-                onChange={(e) => patchItem(i, { strength: e.target.value })}
-              />
-              <Input
-                className="w-28"
-                placeholder="Form"
-                value={it.form}
-                onChange={(e) => patchItem(i, { form: e.target.value })}
-              />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Input
-                className="min-w-40 flex-1"
-                placeholder="Frequency (e.g. 1 tab twice daily)"
-                value={it.frequency}
-                onChange={(e) => patchItem(i, { frequency: e.target.value })}
-              />
-              <Input
-                type="number"
-                className="w-24"
-                min={1}
-                max={365}
-                value={it.durationDays}
-                onChange={(e) => patchItem(i, { durationDays: Number(e.target.value) })}
-              />
-              <span className="self-center text-sm text-muted-foreground">days</span>
-            </div>
-            <Input
-              placeholder="Instructions (e.g. after food)"
-              value={it.instructions}
-              onChange={(e) => patchItem(i, { instructions: e.target.value })}
-            />
-            {items.length > 1 && (
-              <button
-                type="button"
-                className="justify-self-start text-sm text-destructive hover:underline"
-                onClick={() => setItems((rs) => rs.filter((_, idx) => idx !== i))}
-              >
-                Remove
-              </button>
-            )}
-          </div>
-        ))}
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="justify-self-start"
-          onClick={() => setItems((rs) => [...rs, blankItem()])}
-        >
-          Add medicine
-        </Button>
-      </div>
-
-      <Field>
-        <FieldLabel>Advice</FieldLabel>
-        <Textarea rows={2} value={advice} onChange={(e) => setAdvice(e.target.value)} />
-      </Field>
-      <Field>
-        <FieldLabel>Clinical notes (not shown to the patient)</FieldLabel>
-        <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
-      </Field>
-
-      <div className="flex flex-wrap items-end gap-4">
-        <Field className="w-44">
-          <FieldLabel>Follow-up date</FieldLabel>
-          <Input
-            type="date"
-            value={followUpDate}
-            onChange={(e) => setFollowUpDate(e.target.value)}
+      <section className="grid gap-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Assessment
+        </h2>
+        <Field>
+          <FieldLabel>Symptoms</FieldLabel>
+          <Textarea rows={2} value={symptoms} onChange={(e) => setSymptoms(e.target.value)} />
+        </Field>
+        <Field>
+          <FieldLabel>Diagnosis *</FieldLabel>
+          <Textarea
+            rows={2}
+            required
+            value={diagnosis}
+            onChange={(e) => setDiagnosis(e.target.value)}
           />
         </Field>
-        <div className="grid gap-1">
-          <span className="text-sm font-medium">Drug categories</span>
-          <div className="flex flex-wrap gap-3">
-            {FLAGS.map((f) => (
-              <label key={f} className="flex items-center gap-1.5 text-sm">
-                <Checkbox
-                  checked={flags.has(f)}
-                  onCheckedChange={(v) =>
-                    setFlags((s) => {
-                      const next = new Set(s);
-                      if (v === true) next.add(f);
-                      else next.delete(f);
-                      return next;
-                    })
-                  }
-                />
-                {FLAG_LABEL[f] ?? f}
-              </label>
-            ))}
+      </section>
+
+      <section className="grid gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Medicines {medCount > 0 && <span className="text-foreground">· {medCount}</span>}
+          </h2>
+          {favorites.length > 0 && (
+            <Select
+              value=""
+              onValueChange={(v) => {
+                const m = favorites[Number(v)];
+                if (m) addFavorite(m);
+              }}
+            >
+              <SelectTrigger className="w-64">
+                <SelectValue placeholder="Add from regulars…" />
+              </SelectTrigger>
+              <SelectContent>
+                {favorites.map((m, i) => (
+                  <SelectItem key={i} value={String(i)}>
+                    {medicineLabel(m)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+        <MedicineRows
+          rows={items}
+          onChange={setItems}
+          minRows={1}
+          rowAction={(row) => {
+            const one = toMedicineItems([row])[0];
+            return one ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                title="Save to your regular medicines"
+                onClick={() => void saveAsRegular(row)}
+              >
+                <StarIcon /> Regular
+              </Button>
+            ) : null;
+          }}
+        />
+      </section>
+
+      <section className="grid gap-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Plan</h2>
+        <Field>
+          <FieldLabel>Advice</FieldLabel>
+          <Textarea rows={2} value={advice} onChange={(e) => setAdvice(e.target.value)} />
+        </Field>
+        <Field>
+          <FieldLabel>Clinical notes (not shown to the patient)</FieldLabel>
+          <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+        </Field>
+        <div className="flex flex-wrap items-end gap-4">
+          <Field className="w-44">
+            <FieldLabel>Follow-up date</FieldLabel>
+            <Input
+              type="date"
+              value={followUpDate}
+              onChange={(e) => setFollowUpDate(e.target.value)}
+            />
+          </Field>
+          <div className="grid gap-1">
+            <span className="text-sm font-medium">Drug categories</span>
+            <div className="flex flex-wrap gap-3">
+              {FLAGS.map((f) => (
+                <label key={f} className="flex items-center gap-1.5 text-sm">
+                  <Checkbox
+                    checked={flags.has(f)}
+                    onCheckedChange={(v) =>
+                      setFlags((s) => {
+                        const next = new Set(s);
+                        if (v === true) next.add(f);
+                        else next.delete(f);
+                        return next;
+                      })
+                    }
+                  />
+                  {FLAG_LABEL[f] ?? f}
+                </label>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="flex flex-wrap gap-3">
-        <Button type="submit" variant="outline" disabled={busy}>
-          {saveM.isPending ? 'Saving…' : 'Save draft'}
-        </Button>
-        <Button type="button" disabled={busy} onClick={() => issueM.mutate()}>
-          {issueM.isPending ? 'Issuing…' : 'Issue prescription'}
-        </Button>
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-5 py-3 backdrop-blur sm:px-6 lg:px-10">
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="submit" variant="outline" disabled={busy}>
+            {saveM.isPending ? 'Saving…' : 'Save draft'}
+          </Button>
+          <Button type="button" disabled={busy} onClick={() => issueM.mutate()}>
+            {issueM.isPending ? 'Issuing…' : 'Issue prescription'}
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            {medCount} medicine{medCount === 1 ? '' : 's'}
+          </span>
+        </div>
       </div>
     </form>
   );

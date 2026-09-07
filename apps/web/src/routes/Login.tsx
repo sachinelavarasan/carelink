@@ -5,6 +5,7 @@ import { Notice } from '../components/Notice';
 import { Button } from '../components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '../components/ui/field';
 import { Input } from '../components/ui/input';
+import { PasswordInput } from '../components/ui/password-input';
 import { errMessage, isStatus } from '../lib/api';
 import { useAuth } from '../lib/auth';
 
@@ -37,7 +38,7 @@ export default function Login() {
   }
 
   return (
-    <AuthLayout title="Sign in to CareLink">
+    <AuthLayout title="Sign in">
       {error && <Notice kind="error">{error}</Notice>}
       <form onSubmit={onSubmit}>
         <FieldGroup>
@@ -54,9 +55,8 @@ export default function Login() {
           </Field>
           <Field>
             <FieldLabel htmlFor={pwId}>Password</FieldLabel>
-            <Input
+            <PasswordInput
               id={pwId}
-              type="password"
               autoComplete="current-password"
               required
               value={password}
@@ -68,12 +68,9 @@ export default function Login() {
           </Button>
         </FieldGroup>
       </form>
-      <div className="mt-4 flex justify-between text-sm">
+      <div className="mt-4 text-sm">
         <Link className="text-primary underline underline-offset-4" to="/forgot">
           Forgot password?
-        </Link>
-        <Link className="text-primary underline underline-offset-4" to="/register">
-          Create account
         </Link>
       </div>
     </AuthLayout>

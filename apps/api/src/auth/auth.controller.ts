@@ -1,21 +1,18 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
   HttpCode,
   Post,
   Query,
-  Req,
   Res,
   UsePipes,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import {
   forgotPasswordSchema,
   loginSchema,
-  refreshSchema,
   registerSchema,
   resetPasswordSchema,
   verifyEmailQuerySchema,
@@ -27,9 +24,7 @@ import {
 } from '@carelink/shared';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { AuthService } from './auth.service';
-import { CookieService, REFRESH_COOKIE } from './cookies';
-
-type CookieRequest = Request & { cookies?: Record<string, string | undefined> };
+import { CookieService } from './cookies';
 
 @Controller('auth')
 export class AuthController {
@@ -71,33 +66,12 @@ export class AuthController {
     return tokens;
   }
 
-  @Post('refresh')
-  @HttpCode(200)
-  async refresh(
-    @Req() req: CookieRequest,
-    @Res({ passthrough: true }) res: Response,
-    @Body() rawBody: unknown,
-  ): Promise<AuthTokens> {
-    const fromCookie = req.cookies?.[REFRESH_COOKIE];
-    const refreshToken =
-      fromCookie ?? new ZodValidationPipe(refreshSchema).transform(rawBody).refreshToken;
-    if (!refreshToken) throw new BadRequestException('refresh token required');
-
-    const tokens = await this.auth.refresh(refreshToken);
-    this.cookies.setAuthCookies(res, tokens);
-    return tokens;
-  }
-
   @Post('logout')
   @HttpCode(200)
-  async logout(
-    @Req() req: CookieRequest,
-    @Res({ passthrough: true }) res: Response,
-    @Body() rawBody: unknown,
-  ): Promise<{ ok: true }> {
-    const token = req.cookies?.[REFRESH_COOKIE] ?? (rawBody as { refreshToken?: string })?.refreshToken;
+  logout(@Res({ passthrough: true }) res: Response): { ok: true } {
+    // Stateless tokens — logout just drops the browser's auth cookie. Mobile
+    // clears its own stored token.
     this.cookies.clearAuthCookies(res);
-    if (token) await this.auth.logout(token);
     return { ok: true };
   }
 

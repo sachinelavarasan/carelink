@@ -7,7 +7,6 @@ import { AuthService } from './auth.service';
 import { CookieService } from './cookies';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RolesGuard } from './roles.guard';
-import { TokenService } from './token.service';
 
 @Global()
 @Module({
@@ -21,7 +20,7 @@ import { TokenService } from './token.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, TokenService, CookieService, JwtAuthGuard, RolesGuard],
-  exports: [JwtModule, JwtAuthGuard, RolesGuard, TokenService, CookieService],
+  providers: [AuthService, CookieService, JwtAuthGuard, RolesGuard],
+  exports: [JwtModule, JwtAuthGuard, RolesGuard, CookieService],
 })
 export class AuthModule {}

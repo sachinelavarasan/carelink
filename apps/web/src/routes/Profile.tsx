@@ -1,11 +1,17 @@
 import { type FormEvent, useId, useState } from 'react';
 import type { DoctorProfileInput, PatientProfileInput } from '@carelink/shared';
+import { BadgeCheckIcon, ClockIcon } from 'lucide-react';
 import { AppShell } from '../components/AppShell';
+import { AvatarUpload } from '../components/AvatarUpload';
+import { MedicineRows, fromMedicineItem, toMedicineItems, type MedicineRow } from '../components/MedicineRows';
 import { Notice } from '../components/Notice';
+import { RoleBadge } from '../components/RoleBadge';
+import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Field, FieldGroup, FieldLabel } from '../components/ui/field';
 import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -29,13 +35,17 @@ type Me = NonNullable<ReturnType<typeof useAuth>['me']>;
 export default function Profile() {
   const { me, reload } = useAuth();
   if (!me) return null;
+  const isDoctor = me.user.role === 'DOCTOR';
 
   return (
     <AppShell>
-      <h1 className="mb-4 text-xl font-semibold">Your profile</h1>
-      <Card>
+      <h1 className="mb-4 text-xl font-semibold">{isDoctor ? 'Doctor profile' : 'Patient profile'}</h1>
+
+      <ProfileHeader me={me} onAvatarChanged={reload} />
+
+      <Card className="mt-4">
         <CardContent>
-          {me.user.role === 'DOCTOR' ? (
+          {isDoctor ? (
             <DoctorForm me={me} onSaved={reload} />
           ) : (
             <PatientForm me={me} onSaved={reload} />
@@ -43,8 +53,57 @@ export default function Profile() {
         </CardContent>
       </Card>
 
-      {me.user.role === 'PATIENT' && <DeleteAccount />}
+      {!isDoctor && <DeleteAccount />}
     </AppShell>
+  );
+}
+
+/** Identity card at the top of the profile — who this account is and, for a
+ *  doctor, whether they're verified. */
+function ProfileHeader({ me, onAvatarChanged }: { me: Me; onAvatarChanged: () => Promise<void> }) {
+  const isDoctor = me.user.role === 'DOCTOR';
+  const verified = Boolean(me.doctorProfile?.verifiedAt);
+  const d = me.doctorProfile;
+
+  return (
+    <Card>
+      <CardContent className="flex flex-wrap items-center gap-4">
+        <AvatarUpload
+          name={me.user.fullName}
+          src={me.user.avatarUrl}
+          onChanged={onAvatarChanged}
+        />
+        <div className="grid gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-lg font-semibold">{me.user.fullName}</span>
+            <RoleBadge role={me.user.role} />
+            {isDoctor &&
+              (verified ? (
+                <Badge variant="outline" className="border border-success-border bg-success-bg text-success-fg gap-1">
+                  <BadgeCheckIcon aria-hidden />
+                  Verified
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="border border-warning-border bg-warning-bg text-warning-fg gap-1">
+                  <ClockIcon aria-hidden />
+                  Verification pending
+                </Badge>
+              ))}
+          </div>
+          <p className="text-sm text-muted-foreground">{me.user.email}</p>
+          {isDoctor && d && (d.medicalCouncil || d.registrationNumber) && (
+            <p className="text-sm text-muted-foreground">
+              {[d.medicalCouncil, d.registrationNumber && `Reg. No. ${d.registrationNumber}`]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
+          )}
+          {!isDoctor && me.patientProfile?.dob && (
+            <p className="text-sm text-muted-foreground">Born {me.patientProfile.dob}</p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -159,6 +218,25 @@ function TextField({
   );
 }
 
+function TextAreaField({
+  label,
+  value,
+  onChange,
+  ...rest
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+} & Omit<React.ComponentProps<typeof Textarea>, 'value' | 'onChange'>) {
+  const id = useId();
+  return (
+    <Field>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <Textarea id={id} value={value} onChange={(e) => onChange(e.target.value)} {...rest} />
+    </Field>
+  );
+}
+
 function PatientForm({ me, onSaved }: { me: Me; onSaved: () => Promise<void> }) {
   const p = me.patientProfile;
   const genderId = useId();
@@ -254,8 +332,14 @@ function DoctorForm({ me, onSaved }: { me: Me; onSaved: () => Promise<void> }) {
     yearsExperience: d?.yearsExperience?.toString() ?? '0',
     consultationFeeInr: d?.consultationFeeInr?.toString() ?? '0',
     clinicName: d?.clinicName ?? '',
+    clinicAddress: d?.clinicAddress ?? '',
+    clinicMapUrl: d?.clinicMapUrl ?? '',
+    clinicPhone: d?.clinicPhone ?? '',
     bio: d?.bio ?? '',
   });
+  const [meds, setMeds] = useState<MedicineRow[]>(
+    () => (d?.favoriteMedicines ?? []).map(fromMedicineItem),
+  );
   const set = (k: keyof typeof f) => (v: string) => setF((s) => ({ ...s, [k]: v }));
   const { busy, error, ok, save } = useSaver<DoctorProfileInput>('/me/doctor-profile', onSaved);
 
@@ -269,7 +353,11 @@ function DoctorForm({ me, onSaved }: { me: Me; onSaved: () => Promise<void> }) {
       yearsExperience: Number(f.yearsExperience) || 0,
       consultationFeeInr: Number(f.consultationFeeInr) || 0,
       clinicName: f.clinicName || undefined,
+      clinicAddress: f.clinicAddress || undefined,
+      clinicMapUrl: f.clinicMapUrl || undefined,
+      clinicPhone: f.clinicPhone || undefined,
       bio: f.bio || undefined,
+      favoriteMedicines: toMedicineItems(meds),
     });
   }
 
@@ -305,7 +393,37 @@ function DoctorForm({ me, onSaved }: { me: Me; onSaved: () => Promise<void> }) {
           onChange={set('consultationFeeInr')}
         />
         <TextField label="Clinic name" value={f.clinicName} onChange={set('clinicName')} />
+        <TextAreaField
+          label="Clinic address"
+          value={f.clinicAddress}
+          onChange={set('clinicAddress')}
+          rows={2}
+        />
+        <TextField
+          label="Map link"
+          type="url"
+          inputMode="url"
+          placeholder="https://maps.google.com/?q=…"
+          value={f.clinicMapUrl}
+          onChange={set('clinicMapUrl')}
+        />
+        <TextField
+          label="Clinic phone"
+          type="tel"
+          value={f.clinicPhone}
+          onChange={set('clinicPhone')}
+        />
         <TextField label="Short bio" value={f.bio} onChange={set('bio')} />
+
+        <div className="grid gap-2">
+          <span className="text-sm font-medium">Regular medicines</span>
+          <p className="text-sm text-muted-foreground">
+            Save the medicines you prescribe often — you can drop them into a prescription in one
+            click.
+          </p>
+          <MedicineRows rows={meds} onChange={setMeds} addLabel="Add a regular medicine" />
+        </div>
+
         <Button type="submit" className="w-fit" disabled={busy}>
           {busy ? 'Saving…' : 'Save profile'}
         </Button>

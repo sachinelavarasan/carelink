@@ -17,15 +17,18 @@ import type {
   ResetPasswordInput,
   UserRole,
 } from '@carelink/shared';
-import { durationToMs, durationToSeconds } from '../common/duration';
+import { durationToSeconds } from '../common/duration';
 import type { AppConfig } from '../config';
 import { DB } from '../db/db.module';
 import type { Database } from '../db';
 import { users } from '../db/schema';
 import { MailService } from '../mail/mail.service';
-import { TokenService } from './token.service';
 
 const BCRYPT_ROUNDS = 12;
+
+/** One-off email links are stateless JWTs, scoped by a per-purpose secret so
+ *  they can never be replayed as an access token (or as each other). */
+type LinkPurpose = 'verify' | 'reset';
 
 @Injectable()
 export class AuthService {
@@ -37,9 +40,30 @@ export class AuthService {
     @Inject(DB) private readonly connection: Database,
     private readonly jwt: JwtService,
     private readonly config: ConfigService<AppConfig, true>,
-    private readonly tokens: TokenService,
     private readonly mail: MailService,
   ) {}
+
+  private purposeSecret(purpose: LinkPurpose): string {
+    return `${this.config.get('JWT_ACCESS_SECRET', { infer: true })}:${purpose}`;
+  }
+
+  private signLink(userId: string, purpose: LinkPurpose, expiresIn: string): Promise<string> {
+    return this.jwt.signAsync(
+      { sub: userId, purpose },
+      { secret: this.purposeSecret(purpose), expiresIn },
+    );
+  }
+
+  private async readLink(token: string, purpose: LinkPurpose): Promise<string | null> {
+    try {
+      const payload = await this.jwt.verifyAsync<{ sub: string; purpose?: string }>(token, {
+        secret: this.purposeSecret(purpose),
+      });
+      return payload.purpose === purpose && payload.sub ? payload.sub : null;
+    } catch {
+      return null;
+    }
+  }
 
   async register(input: RegisterInput): Promise<{ ok: true }> {
     const existing = await this.db.query.users.findFirst({
@@ -73,7 +97,7 @@ export class AuthService {
   }
 
   async verifyEmail(token: string): Promise<{ ok: true }> {
-    const userId = await this.tokens.consume(token, 'EMAIL_VERIFY');
+    const userId = await this.readLink(token, 'verify');
     if (!userId) throw new BadRequestException('invalid or expired verification link');
     await this.db.update(users).set({ emailVerifiedAt: new Date() }).where(eq(users.id, userId));
     return { ok: true };
@@ -90,25 +114,7 @@ export class AuthService {
     if (!user.emailVerifiedAt) {
       throw new ForbiddenException('email not verified');
     }
-    return this.issueTokens(user.id, user.role);
-  }
-
-  async refresh(refreshToken: string): Promise<AuthTokens> {
-    const userId = await this.tokens.consume(refreshToken, 'REFRESH');
-    if (!userId) throw new UnauthorizedException('invalid refresh token');
-
-    const user = await this.db.query.users.findFirst({
-      where: eq(users.id, userId),
-      columns: { id: true, role: true, disabledAt: true },
-    });
-    if (!user || user.disabledAt) throw new UnauthorizedException('account unavailable');
-
-    return this.issueTokens(user.id, user.role);
-  }
-
-  async logout(refreshToken: string): Promise<{ ok: true }> {
-    await this.tokens.consume(refreshToken, 'REFRESH');
-    return { ok: true };
+    return this.issueAccessToken(user.id, user.role);
   }
 
   async forgotPassword(input: ForgotPasswordInput): Promise<{ ok: true }> {
@@ -117,7 +123,7 @@ export class AuthService {
       columns: { id: true },
     });
     if (user) {
-      const raw = await this.tokens.issue(user.id, 'PASSWORD_RESET', durationToMs('1h'));
+      const raw = await this.signLink(user.id, 'reset', '1h');
       const url = `${this.webUrl()}/reset?token=${raw}`;
       await this.mail.sendPasswordResetEmail(input.email, url);
     }
@@ -125,16 +131,15 @@ export class AuthService {
   }
 
   async resetPassword(input: ResetPasswordInput): Promise<{ ok: true }> {
-    const userId = await this.tokens.consume(input.token, 'PASSWORD_RESET');
+    const userId = await this.readLink(input.token, 'reset');
     if (!userId) throw new BadRequestException('invalid or expired reset link');
 
     const passwordHash = await bcrypt.hash(input.password, BCRYPT_ROUNDS);
     await this.db.update(users).set({ passwordHash }).where(eq(users.id, userId));
-    await this.tokens.revokeAll(userId, 'REFRESH');
     return { ok: true };
   }
 
-  private async issueTokens(userId: string, role: UserRole): Promise<AuthTokens> {
+  private async issueAccessToken(userId: string, role: UserRole): Promise<AuthTokens> {
     const accessTtl = this.config.get('JWT_ACCESS_TTL', { infer: true });
     const accessToken = await this.jwt.signAsync(
       { sub: userId, role },
@@ -143,12 +148,7 @@ export class AuthService {
         expiresIn: accessTtl,
       },
     );
-    const refreshToken = await this.tokens.issue(
-      userId,
-      'REFRESH',
-      durationToMs(this.config.get('JWT_REFRESH_TTL', { infer: true })),
-    );
-    return { accessToken, refreshToken, expiresIn: durationToSeconds(accessTtl) };
+    return { accessToken, expiresIn: durationToSeconds(accessTtl) };
   }
 
   private webUrl(): string {
@@ -156,7 +156,7 @@ export class AuthService {
   }
 
   private async sendVerification(userId: string, email: string): Promise<void> {
-    const raw = await this.tokens.issue(userId, 'EMAIL_VERIFY', durationToMs('24h'));
+    const raw = await this.signLink(userId, 'verify', '24h');
     await this.mail.sendVerificationEmail(email, `${this.webUrl()}/verify?token=${raw}`);
   }
 }

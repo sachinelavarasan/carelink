@@ -2,6 +2,7 @@ import type { DoctorPublic } from '@carelink/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
+import { BackLink } from '../components/BackLink';
 import { Notice } from '../components/Notice';
 import { Spinner } from '../components/Spinner';
 import { buttonVariants } from '../components/ui/button';
@@ -17,9 +18,7 @@ export default function DoctorProfile() {
 
   return (
     <AppShell>
-      <Link className="text-sm text-primary underline underline-offset-4" to="/doctors">
-        ← All doctors
-      </Link>
+      <BackLink to="/doctors">All doctors</BackLink>
 
       {doctorQ.isLoading && (
         <p className="mt-3 inline-flex items-center gap-2 text-sm text-muted-foreground">
@@ -45,6 +44,42 @@ export default function DoctorProfile() {
               {doctorQ.data.clinicName ? ` · ${doctorQ.data.clinicName}` : ''}
             </p>
             {doctorQ.data.bio && <p className="mt-1 text-sm">{doctorQ.data.bio}</p>}
+
+            {(doctorQ.data.clinicAddress ||
+              doctorQ.data.clinicMapUrl ||
+              doctorQ.data.clinicPhone) && (
+              <div className="mt-2 grid gap-1 border-t pt-3 text-sm">
+                <span className="font-medium">
+                  {doctorQ.data.clinicName ?? 'Clinic'}
+                </span>
+                {doctorQ.data.clinicAddress && (
+                  <p className="whitespace-pre-line text-muted-foreground">
+                    {doctorQ.data.clinicAddress}
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-x-4">
+                  {doctorQ.data.clinicMapUrl && (
+                    <a
+                      className="text-primary underline-offset-2 hover:underline"
+                      href={doctorQ.data.clinicMapUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Get directions
+                    </a>
+                  )}
+                  {doctorQ.data.clinicPhone && (
+                    <a
+                      className="text-primary underline-offset-2 hover:underline"
+                      href={`tel:${doctorQ.data.clinicPhone.replace(/\s+/g, '')}`}
+                    >
+                      {doctorQ.data.clinicPhone}
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
             <Link
               className={`${buttonVariants()} mt-2 w-fit`}
               to={`/book?doctorId=${doctorQ.data.id}`}

@@ -16,11 +16,9 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url().optional(),
   DIRECT_URL: z.string().url().optional(),
 
-  // Our own auth — required
+  // Our own auth — a single access token, no refresh.
   JWT_ACCESS_SECRET: z.string().min(24),
-  JWT_REFRESH_SECRET: z.string().min(24),
-  JWT_ACCESS_TTL: z.string().default('15m'),
-  JWT_REFRESH_TTL: z.string().default('30d'),
+  JWT_ACCESS_TTL: z.string().default('7d'),
 
   // Transactional email (Nodemailer SMTP) — optional; if unset, the mailer logs
   // links to the console instead of sending (fine for early local dev).
@@ -47,10 +45,10 @@ const envSchema = z.object({
   COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).optional(),
   COOKIE_DOMAIN: z.string().min(1).optional(),
 
-  // File storage (Cloudinary) — holds prescription PDFs (M4) and, later, chat
-  // attachments + medical documents. Optional: if unset, prescriptions still
-  // finalise and the PDF is rendered on demand by GET /prescriptions/:id/pdf;
-  // it just isn't persisted anywhere.
+  // File storage (Cloudinary) — holds prescription PDFs (M4), user avatars, and,
+  // later, chat attachments + medical documents. Optional: if unset, prescriptions
+  // still finalise and the PDF is rendered on demand by GET /prescriptions/:id/pdf
+  // (it just isn't persisted), and PUT /me/avatar returns 501.
   // Either set CLOUDINARY_URL directly, or supply the three discrete parts below
   // (CLOUDINARY_CLOUD_NAME / _API_KEY / _API_SECRET) and loadConfig() assembles
   // CLOUDINARY_URL from them — same pattern as DATABASE_URL from the DB_* parts.
@@ -113,7 +111,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   ) {
     const url = `cloudinary://${CLOUDINARY_API_KEY}:${CLOUDINARY_API_SECRET}@${CLOUDINARY_CLOUD_NAME}`;
     cleaned.CLOUDINARY_URL = url;
-    process.env.CLOUDINARY_URL ??= url;
+    // Overwrite unconditionally: a copied .env often carries CLOUDINARY_URL="" ,
+    // which is not nullish, so `??=` would leave the SDK with an empty string.
+    process.env.CLOUDINARY_URL = url;
   }
 
   const parsed = envSchema.safeParse(cleaned);

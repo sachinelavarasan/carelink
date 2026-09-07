@@ -9,6 +9,7 @@ import type {
   ReplaceAvailabilityRulesInput,
   Slot,
   VisitedDoctor,
+  VisitedPatient,
 } from '@carelink/shared';
 import { DB } from '../db/db.module';
 import type { Database } from '../db';
@@ -17,6 +18,7 @@ import {
   availabilityExceptions,
   availabilityRules,
   doctorProfiles,
+  patientProfiles,
   users,
 } from '../db/schema';
 import { expandSlots } from './slots';
@@ -42,6 +44,9 @@ export class AvailabilityService {
         bio: doctorProfiles.bio,
         consultationFeeInr: doctorProfiles.consultationFeeInr,
         clinicName: doctorProfiles.clinicName,
+        clinicAddress: doctorProfiles.clinicAddress,
+        clinicMapUrl: doctorProfiles.clinicMapUrl,
+        clinicPhone: doctorProfiles.clinicPhone,
         verifiedAt: doctorProfiles.verifiedAt,
       })
       .from(doctorProfiles)
@@ -117,6 +122,56 @@ export class AvailabilityService {
         };
       })
       .filter((d): d is VisitedDoctor => d !== null);
+  }
+
+  /** Patients this doctor has had appointments with, most recent first. */
+  async visitedPatients(doctorUserId: string): Promise<VisitedPatient[]> {
+    const grouped = await this.db
+      .select({
+        patientId: appointments.patientId,
+        lastVisitedAt: sql<string>`max(${appointments.scheduledStart})`,
+        visitCount: sql<number>`count(*)::int`,
+      })
+      .from(appointments)
+      .where(
+        and(eq(appointments.doctorId, doctorUserId), ne(appointments.status, 'CANCELLED')),
+      )
+      .groupBy(appointments.patientId)
+      .orderBy(desc(sql`max(${appointments.scheduledStart})`));
+
+    if (grouped.length === 0) return [];
+
+    const profiles = await this.db
+      .select({
+        id: users.id,
+        fullName: users.fullName,
+        dob: patientProfiles.dob,
+        gender: patientProfiles.gender,
+      })
+      .from(users)
+      .leftJoin(patientProfiles, eq(patientProfiles.userId, users.id))
+      .where(
+        inArray(
+          users.id,
+          grouped.map((g) => g.patientId),
+        ),
+      );
+    const byId = new Map(profiles.map((p) => [p.id, p]));
+
+    return grouped
+      .map((g) => {
+        const p = byId.get(g.patientId);
+        if (!p) return null;
+        return {
+          id: p.id,
+          fullName: p.fullName,
+          dob: p.dob ?? null,
+          gender: p.gender ?? null,
+          lastVisitedAt: new Date(g.lastVisitedAt).toISOString(),
+          visitCount: g.visitCount,
+        };
+      })
+      .filter((p): p is VisitedPatient => p !== null);
   }
 
   private async profileId(userId: string): Promise<string> {

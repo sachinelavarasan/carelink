@@ -10,6 +10,18 @@ const isoDate = z.string().datetime({ offset: true });
 const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'expected HH:mm');
 const cuid = z.string().min(1);
 
+/** One prescribable medicine line — shared by prescription items and a
+ *  doctor's saved "regular medicines". */
+export const medicineItemSchema = z.object({
+  drugName: z.string().trim().min(1).max(200),
+  strength: z.string().trim().max(60).optional(),
+  form: z.string().trim().max(60).optional(),
+  frequency: z.string().trim().min(1).max(120),
+  durationDays: z.number().int().min(1).max(365),
+  instructions: z.string().trim().max(500).optional(),
+});
+export type MedicineItem = z.infer<typeof medicineItemSchema>;
+
 /* ------------------------------------------------------------------ users */
 
 export const userSchema = z.object({
@@ -40,9 +52,6 @@ export const loginSchema = z.object({
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 
-export const refreshSchema = z.object({ refreshToken: z.string().min(1) });
-export type RefreshInput = z.infer<typeof refreshSchema>;
-
 export const verifyEmailQuerySchema = z.object({ token: z.string().min(1) });
 
 export const forgotPasswordSchema = z.object({ email: emailField });
@@ -54,10 +63,10 @@ export const resetPasswordSchema = z.object({
 });
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
+/** Login response — a single access token, no refresh. */
 export const authTokensSchema = z.object({
   accessToken: z.string(),
-  refreshToken: z.string(),
-  expiresIn: z.number().int().positive(),
+  expiresIn: z.number().int().positive(), // seconds
 });
 export type AuthTokens = z.infer<typeof authTokensSchema>;
 
@@ -86,6 +95,11 @@ export const doctorProfileSchema = z.object({
   bio: z.string().max(2000).optional(),
   consultationFeeInr: z.number().int().nonnegative(),
   clinicName: z.string().max(200).optional(),
+  clinicAddress: z.string().max(500).optional(),
+  clinicMapUrl: z.string().url().max(2000).optional(),
+  clinicPhone: z.string().max(20).optional(),
+  /** Reusable medicine lines the doctor can drop into a prescription. */
+  favoriteMedicines: z.array(medicineItemSchema).max(50).default([]),
 });
 export type DoctorProfileInput = z.infer<typeof doctorProfileSchema>;
 
@@ -144,6 +158,9 @@ export const doctorPublicSchema = z.object({
   bio: z.string().nullable(),
   consultationFeeInr: z.number().int(),
   clinicName: z.string().nullable(),
+  clinicAddress: z.string().nullable(),
+  clinicMapUrl: z.string().nullable(),
+  clinicPhone: z.string().nullable(),
 });
 export type DoctorPublic = z.infer<typeof doctorPublicSchema>;
 
@@ -164,6 +181,17 @@ export const visitedDoctorSchema = doctorPublicSchema.extend({
   visitCount: z.number().int().positive(),
 });
 export type VisitedDoctor = z.infer<typeof visitedDoctorSchema>;
+
+/** A patient a doctor has consulted — for the doctor's patient list. */
+export const visitedPatientSchema = z.object({
+  id: cuid,
+  fullName: z.string(),
+  dob: z.string().date().nullable(),
+  gender: z.string().nullable(),
+  lastVisitedAt: isoDate,
+  visitCount: z.number().int().positive(),
+});
+export type VisitedPatient = z.infer<typeof visitedPatientSchema>;
 
 /* ------------------------------------------------------------ appointments */
 
@@ -227,6 +255,7 @@ export type AppointmentPage = z.infer<typeof appointmentPageSchema>;
 /** Home-page summary: three counts, a 14-day daily series, and a lifetime
  *  status breakdown (used by the doctor dashboard). */
 export const appointmentSummarySchema = z.object({
+  today: z.number().int().nonnegative(), // non-cancelled appointments dated today (clinic tz)
   upcoming: z.number().int().nonnegative(),
   next7Days: z.number().int().nonnegative(),
   completed: z.number().int().nonnegative(),
@@ -238,7 +267,10 @@ export const appointmentSummarySchema = z.object({
     COMPLETED: z.number().int().nonnegative(),
     NO_SHOW: z.number().int().nonnegative(),
   }),
-  patientsSeen: z.number().int().nonnegative(),
+  patientsSeen: z.number().int().nonnegative(), // doctor: distinct patients on COMPLETED visits
+  counterpartiesSeen: z.number().int().nonnegative(), // distinct other party over non-cancelled
+  followUpsDue: z.number().int().nonnegative(), // patient: finalised Rx with a follow-up in the next 14 days
+  pendingRecords: z.number().int().nonnegative(), // doctor: own prescriptions still in draft
 });
 export type AppointmentSummary = z.infer<typeof appointmentSummarySchema>;
 
@@ -335,14 +367,7 @@ export type VideoSession = z.infer<typeof videoSessionSchema>;
 
 /* ----------------------------------------------------------- prescriptions */
 
-export const prescriptionItemSchema = z.object({
-  drugName: z.string().trim().min(1).max(200),
-  strength: z.string().trim().max(60).optional(),
-  form: z.string().trim().max(60).optional(),
-  frequency: z.string().trim().min(1).max(120),
-  durationDays: z.number().int().min(1).max(365),
-  instructions: z.string().trim().max(500).optional(),
-});
+export const prescriptionItemSchema = medicineItemSchema;
 export type PrescriptionItemInput = z.infer<typeof prescriptionItemSchema>;
 
 /** The doctor's consultation record for one appointment. Created as a DRAFT;
@@ -399,7 +424,8 @@ export type PrescriptionView = z.infer<typeof prescriptionViewSchema>;
 
 /* ----------------------------------------------------------- medical history */
 
-/** One past consultation, with its prescription summary if there is one. */
+/** One past consultation. `prescription` carries the full record (or null) so
+ *  the history UI can show the detail without a second request per row. */
 export const medicalHistoryEntrySchema = z.object({
   appointmentId: cuid,
   scheduledStart: isoDate,
@@ -407,16 +433,7 @@ export const medicalHistoryEntrySchema = z.object({
   reasonForVisit: z.string(),
   doctorName: z.string(),
   patientName: z.string(),
-  prescription: z
-    .object({
-      id: cuid,
-      diagnosis: z.string(),
-      issuedAt: isoDate,
-      followUpDate: z.string().date().nullable(),
-      itemCount: z.number().int().nonnegative(),
-      pdfReady: z.boolean(),
-    })
-    .nullable(),
+  prescription: prescriptionViewSchema.nullable(),
 });
 export type MedicalHistoryEntry = z.infer<typeof medicalHistoryEntrySchema>;
 
@@ -448,6 +465,13 @@ export const cursorQuerySchema = z.object({
 });
 export type CursorQuery = z.infer<typeof cursorQuerySchema>;
 
+/** Patient history query — cursor paging plus an optional filter to a single
+ *  doctor (the patient's "history with Dr X" view). */
+export const medicalHistoryQuerySchema = cursorQuerySchema.extend({
+  doctorId: cuid.optional(),
+});
+export type MedicalHistoryQuery = z.infer<typeof medicalHistoryQuerySchema>;
+
 /* -------------------------------------------------------------- me / profiles */
 
 export const patientProfileOutSchema = patientProfileSchema.extend({
@@ -464,6 +488,10 @@ export const doctorProfileOutSchema = doctorProfileSchema.extend({
   updatedAt: isoDate,
 });
 export type DoctorProfileOut = z.infer<typeof doctorProfileOutSchema>;
+
+/** Result of uploading or clearing the current user's avatar. */
+export const avatarResultSchema = z.object({ avatarUrl: z.string().url().nullable() });
+export type AvatarResult = z.infer<typeof avatarResultSchema>;
 
 export const meSchema = z.object({
   user: userSchema.extend({

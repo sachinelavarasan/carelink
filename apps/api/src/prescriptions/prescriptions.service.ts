@@ -29,8 +29,15 @@ import { renderPrescriptionPdf, type PrescriptionPdfData } from './prescription-
 
 type PrescriptionRow = typeof prescriptions.$inferSelect;
 type AppointmentRow = typeof appointments.$inferSelect;
+type PrescriptionItemRow = typeof prescriptionItems.$inferSelect;
+type DoctorProfileRow = typeof doctorProfiles.$inferSelect;
 
 const HISTORY_LIMIT_MAX = 50;
+
+/** Same order the dedicated query uses: by position, then id. */
+function sortItems(items: PrescriptionItemRow[]): PrescriptionItemRow[] {
+  return [...items].sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
+}
 
 @Injectable()
 export class PrescriptionsService {
@@ -179,9 +186,12 @@ export class PrescriptionsService {
 
   async myHistory(
     user: AuthUser,
-    query: { cursor?: string; limit: number },
+    query: { cursor?: string; limit: number; doctorId?: string },
   ): Promise<MedicalHistory> {
-    return this.listHistory({ patientId: user.id, viewerIsPatient: true }, query);
+    return this.listHistory(
+      { patientId: user.id, doctorId: query.doctorId, viewerIsPatient: true },
+      query,
+    );
   }
 
   async patientHistory(
@@ -237,14 +247,18 @@ export class PrescriptionsService {
     appt: AppointmentRow,
     viewerIsPatient: boolean,
   ): Promise<MedicalHistoryEntry> {
-    const [doctor, patient, rx] = await Promise.all([
+    const [doctor, patient, rx, docProfile] = await Promise.all([
       this.db.query.users.findFirst({ where: eq(users.id, appt.doctorId), columns: { fullName: true } }),
       this.db.query.users.findFirst({ where: eq(users.id, appt.patientId), columns: { fullName: true } }),
       this.db.query.prescriptions.findFirst({
         where: eq(prescriptions.appointmentId, appt.id),
-        with: { items: { columns: { id: true } } },
+        with: { items: true },
       }),
+      this.db.query.doctorProfiles.findFirst({ where: eq(doctorProfiles.userId, appt.doctorId) }),
     ]);
+
+    const doctorName = doctor?.fullName ?? 'Unknown';
+    const patientName = patient?.fullName ?? 'Unknown';
 
     // Patients only see finalised prescriptions in their history.
     const visibleRx = rx && (!viewerIsPatient || rx.finalizedAt) ? rx : null;
@@ -254,17 +268,17 @@ export class PrescriptionsService {
       scheduledStart: appt.scheduledStart.toISOString(),
       status: appt.status,
       reasonForVisit: appt.reasonForVisit,
-      doctorName: doctor?.fullName ?? 'Unknown',
-      patientName: patient?.fullName ?? 'Unknown',
+      doctorName,
+      patientName,
       prescription: visibleRx
-        ? {
-            id: visibleRx.id,
-            diagnosis: visibleRx.diagnosis,
-            issuedAt: visibleRx.issuedAt.toISOString(),
-            followUpDate: visibleRx.followUpDate ?? null,
-            itemCount: visibleRx.items.length,
-            pdfReady: Boolean(visibleRx.finalizedAt),
-          }
+        ? this.toView(visibleRx, {
+            items: sortItems(visibleRx.items),
+            docProfile,
+            doctorName,
+            patientName,
+            scheduledStart: appt.scheduledStart,
+            viewerIsPatient,
+          })
         : null,
     };
   }
@@ -291,8 +305,29 @@ export class PrescriptionsService {
       this.db.query.users.findFirst({ where: eq(users.id, row.patientId), columns: { fullName: true } }),
     ]);
 
-    const viewerIsPatient = user.id === row.patientId;
+    return this.toView(row, {
+      items,
+      docProfile,
+      doctorName: doctorUser?.fullName ?? 'Unknown',
+      patientName: patientUser?.fullName ?? 'Unknown',
+      scheduledStart: appt?.scheduledStart ?? row.issuedAt,
+      viewerIsPatient: user.id === row.patientId,
+    });
+  }
 
+  /** Maps a prescription row + its context to the wire shape. `notes` is
+   *  doctor-only and nulled for the patient. */
+  private toView(
+    row: PrescriptionRow,
+    ctx: {
+      items: PrescriptionItemRow[];
+      docProfile?: DoctorProfileRow | null;
+      doctorName: string;
+      patientName: string;
+      scheduledStart: Date;
+      viewerIsPatient: boolean;
+    },
+  ): PrescriptionView {
     return {
       id: row.id,
       appointmentId: row.appointmentId,
@@ -302,10 +337,10 @@ export class PrescriptionsService {
       symptoms: row.symptoms ?? null,
       diagnosis: row.diagnosis,
       advice: row.advice ?? null,
-      notes: viewerIsPatient ? null : (row.notes ?? null),
+      notes: ctx.viewerIsPatient ? null : (row.notes ?? null),
       followUpDate: row.followUpDate ?? null,
       drugCategoryFlags: row.drugCategoryFlags as PrescriptionView['drugCategoryFlags'],
-      items: items.map((it) => ({
+      items: ctx.items.map((it) => ({
         id: it.id,
         drugName: it.drugName,
         strength: it.strength ?? undefined,
@@ -315,12 +350,12 @@ export class PrescriptionsService {
         instructions: it.instructions ?? undefined,
       })),
       pdfReady: Boolean(row.finalizedAt),
-      doctorName: doctorUser?.fullName ?? 'Unknown',
-      doctorQualifications: docProfile?.qualifications ?? '',
-      medicalCouncil: docProfile?.medicalCouncil ?? '',
-      registrationNumber: docProfile?.registrationNumber ?? '',
-      patientName: patientUser?.fullName ?? 'Unknown',
-      scheduledStart: (appt?.scheduledStart ?? row.issuedAt).toISOString(),
+      doctorName: ctx.doctorName,
+      doctorQualifications: ctx.docProfile?.qualifications ?? '',
+      medicalCouncil: ctx.docProfile?.medicalCouncil ?? '',
+      registrationNumber: ctx.docProfile?.registrationNumber ?? '',
+      patientName: ctx.patientName,
+      scheduledStart: ctx.scheduledStart.toISOString(),
     };
   }
 
