@@ -12,6 +12,7 @@ import {
   type Slot,
   type ReplaceAvailabilityRulesInput,
   type VisitedDoctor,
+  type VisitedPatient,
 } from '@carelink/shared';
 import { CurrentUser, type AuthUser } from '../common/current-user.decorator';
 import { Roles } from '../common/roles.decorator';
@@ -43,6 +44,12 @@ export class AvailabilityController {
   @Roles('PATIENT')
   visitedDoctors(@CurrentUser() user: AuthUser): Promise<VisitedDoctor[]> {
     return this.availability.visitedDoctors(user.id);
+  }
+
+  @Get('me/patients')
+  @Roles('DOCTOR')
+  visitedPatients(@CurrentUser() user: AuthUser): Promise<VisitedPatient[]> {
+    return this.availability.visitedPatients(user.id);
   }
 
   @Get('doctors/:id')
