@@ -102,10 +102,11 @@ npm run test
 ## Deploy (outline — see docs/PLAN.md §11)
 
 - **Web**: Vercel project, root `apps/web`, framework Vite.
-- **API**: separate Vercel project, root `apps/api`; set env from
-  `apps/api/.env.example`. `DATABASE_URL` = Supabase **pooled** (6543);
-  `DIRECT_URL` = direct (5432) for migrations.
-- **Cron**: add repo secret `CRON_SECRET` and variable `API_BASE_URL`.
+- **API**: Render Web Service via [`render.yaml`](render.yaml) — full steps in
+  [docs/DEPLOY-RENDER.md](docs/DEPLOY-RENDER.md). `DATABASE_URL` = Supabase
+  **pooled** (6543); `DIRECT_URL` = direct (5432) for migrations.
+- **Cron**: add repo secret `CRON_SECRET` and variable `API_BASE_URL`
+  (`.github/workflows/cron.yml`), pointed at the Render URL.
 - **Mobile**: `eas build` / `eas submit`.
 
 ## Status

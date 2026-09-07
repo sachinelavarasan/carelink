@@ -14,7 +14,8 @@ export async function createApp(): Promise<INestApplication> {
 
   app.use(helmet());
   app.use(cookieParser());
-  app.setGlobalPrefix(API_PREFIX.replace(/^\//, ''));
+  // Everything is namespaced under `/api/v1`, except the root `/` status card.
+  app.setGlobalPrefix(API_PREFIX.replace(/^\//, ''), { exclude: ['/'] });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.useGlobalFilters(new SentryExceptionFilter(app.getHttpAdapter()));
 

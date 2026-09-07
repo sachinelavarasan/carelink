@@ -16,6 +16,7 @@ import { JobsModule } from './jobs/jobs.module';
 import { MailModule } from './mail/mail.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PrescriptionsModule } from './prescriptions/prescriptions.module';
+import { RootModule } from './root/root.module';
 import { StorageModule } from './storage/storage.module';
 import { UsersModule } from './users/users.module';
 import { VideoModule } from './video/video.module';
@@ -42,6 +43,7 @@ import { VideoModule } from './video/video.module';
     PrescriptionsModule,
     JobsModule,
     HealthModule,
+    RootModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

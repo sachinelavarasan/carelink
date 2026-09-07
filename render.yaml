@@ -1,0 +1,130 @@
+# Render Blueprint — CareLink API
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Deploy: push this file, then in the Render dashboard → New → Blueprint,
+# point it at this repo. Render reads this file and creates the service.
+# Fill the `sync: false` vars in the dashboard (they hold secrets / per-env URLs).
+
+services:
+  - type: web
+    name: carelink-api
+    runtime: node
+    plan: free            # bump to "starter" for zero cold starts + pre-deploy migrations
+    region: singapore     # match the Supabase region (ap-southeast-1)
+    rootDir: .             # monorepo root — the build needs packages/shared
+    autoDeploy: true
+    healthCheckPath: /api/v1/healthz
+
+    # devDependencies are required to build (@nestjs/cli, tsup, tsx), so force
+    # them in even when NODE_ENV=production. Build @carelink/shared first.
+    buildCommand: >-
+      npm ci --include=dev &&
+      npm run build --workspace @carelink/shared &&
+      npm run build --workspace @carelink/api
+
+    startCommand: npm run start --workspace @carelink/api
+
+    # Runs after build, before traffic cuts over. Requires the Starter plan or
+    # higher; on Free, run migrations manually (see docs/DEPLOY-RENDER.md).
+    # preDeployCommand: npm run db:migrate --workspace @carelink/api
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20"
+      # Persistent server → a real pool is fine (Vercel serverless used 1).
+      - key: DB_POOL_MAX
+        value: "5"
+
+      # Supabase project ref: beelkxktvfyanwximwnc
+      # Set both in the Render dashboard (they carry the DB password).
+      # Render has NO outbound IPv6, so the direct host db.<ref>.supabase.co
+      # is unreachable from here — BOTH vars must use the pooler host.
+      # Copy the exact aws-0-<region>.pooler.supabase.com host from
+      # Supabase → Settings → Database (region is likely ap-southeast-1).
+      #
+      # DATABASE_URL — Transaction pooler, runtime (code sets prepare:false):
+      #   postgresql://postgres.beelkxktvfyanwximwnc:<PASSWORD>@aws-0-<region>.pooler.supabase.com:6543/postgres?pgbouncer=true
+      - key: DATABASE_URL
+        sync: false
+      # DIRECT_URL — Session pooler, drizzle-kit migrations only:
+      #   postgresql://postgres.beelkxktvfyanwximwnc:<PASSWORD>@aws-0-<region>.pooler.supabase.com:5432/postgres
+      - key: DIRECT_URL
+        sync: false
+
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_TTL
+        value: 15m
+      - key: JWT_REFRESH_TTL
+        value: 30d
+
+      # Where email links point, and the CORS allow-list (your Vercel web URL).
+      - key: APP_WEB_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+
+      # Web app and API are on different sites → cross-site cookies.
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: COOKIE_SAMESITE
+        value: none
+
+      # Shared secret for POST /api/v1/jobs/run (the cron dispatcher).
+      - key: CRON_SECRET
+        generateValue: true
+
+      # ---- Optional: leave unset in the dashboard until needed ----
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_SECURE
+        value: "false"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: CLOUDINARY_FOLDER
+        value: carelink
+      - key: JITSI_DOMAIN
+        value: meet.jit.si
+      - key: SENTRY_DSN
+        sync: false
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        value: "0"
+
+# ---------------------------------------------------------------------------
+# Scheduled jobs (reminders + Supabase keep-alive): every 5 min hit
+# POST /api/v1/jobs/run with header x-cron-secret: $CRON_SECRET.
+#
+# Render Cron Jobs need a paid instance. The free path is the GitHub Actions
+# workflow already in .github/workflows/cron.yml — set repo secret CRON_SECRET
+# and repo variable API_BASE_URL to the Render URL, then uncomment it.
+#
+# To run it on Render instead (paid), add:
+#
+# - type: cron
+#   name: carelink-jobs
+#   runtime: node
+#   plan: starter
+#   region: singapore
+#   rootDir: .
+#   schedule: "*/5 * * * *"
+#   buildCommand: "true"
+#   startCommand: >-
+#     curl -fsS -X POST -H "x-cron-secret: $CRON_SECRET"
+#     "$API_BASE_URL/api/v1/jobs/run"
+#   envVars:
+#     - key: CRON_SECRET
+#       fromService: { type: web, name: carelink-api, envVarKey: CRON_SECRET }
+#     - key: API_BASE_URL
+#       sync: false
