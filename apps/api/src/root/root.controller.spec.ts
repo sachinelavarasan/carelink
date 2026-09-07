@@ -19,7 +19,7 @@ describe('formatUptime', () => {
 describe('RootController', () => {
   it('renders an ok card when the db query succeeds', async () => {
     const db = { execute: async () => [{ '?column?': 1 }] } as unknown as Database;
-    const html = await new RootController(db).index();
+    const html = await new RootController({ db } as unknown as Database).index();
 
     expect(html).toContain('<!doctype html>');
     expect(html).toContain('CareLink API');
@@ -33,7 +33,7 @@ describe('RootController', () => {
         throw new Error('no connection');
       },
     } as unknown as Database;
-    const html = await new RootController(db).index();
+    const html = await new RootController({ db } as unknown as Database).index();
 
     expect(html).toContain('degraded dependencies');
     expect(html).toMatch(/Database<\/span><span class="v">down<\/span>/);

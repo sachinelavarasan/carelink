@@ -72,6 +72,21 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     Object.entries(env).map(([key, value]) => [key, value === '' ? undefined : value]),
   );
 
+  // The app runtime (postgres-js) connects via DATABASE_URL; migrations and the
+  // seed use the discrete DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD credentials
+  // (see src/db/config/{database,migration}.config.ts). If only the discrete
+  // parts are set, assemble the URL so a single set of vars drives both.
+  const { DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD } = cleaned;
+  if (!cleaned.DATABASE_URL && DB_HOST && DB_PORT && DB_NAME && DB_USER && DB_PASSWORD) {
+    const url = `postgresql://${encodeURIComponent(DB_USER)}:${encodeURIComponent(
+      DB_PASSWORD,
+    )}@${DB_HOST}:${DB_PORT}/${DB_NAME}`;
+    cleaned.DATABASE_URL = url;
+    cleaned.DIRECT_URL ??= url;
+    process.env.DATABASE_URL ??= url;
+    process.env.DIRECT_URL ??= url;
+  }
+
   const parsed = envSchema.safeParse(cleaned);
   if (!parsed.success) {
     const issues = parsed.error.issues.map((i) => `  - ${i.path.join('.')}: ${i.message}`);

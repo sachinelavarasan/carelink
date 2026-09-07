@@ -13,7 +13,7 @@ function makeService(user: { id: string; passwordHash: string } | null) {
     query: { users: { findFirst: vi.fn().mockResolvedValue(user) } },
     transaction: (fn: (t: typeof tx) => Promise<unknown>) => fn(tx),
   } as unknown as Database;
-  return { service: new UsersService(db), del };
+  return { service: new UsersService({ db } as unknown as Database), del };
 }
 
 describe('UsersService.deleteAccount', () => {

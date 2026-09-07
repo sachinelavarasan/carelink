@@ -5,7 +5,7 @@ import type { Database } from '../db';
 describe('HealthController', () => {
   it('reports db up when the query succeeds', async () => {
     const fakeDb = { execute: async () => [{ '?column?': 1 }] } as unknown as Database;
-    const controller = new HealthController(fakeDb);
+    const controller = new HealthController({ db: fakeDb } as unknown as Database);
 
     const result = await controller.check();
 
@@ -19,7 +19,7 @@ describe('HealthController', () => {
         throw new Error('no connection');
       },
     } as unknown as Database;
-    const controller = new HealthController(fakeDb);
+    const controller = new HealthController({ db: fakeDb } as unknown as Database);
 
     const result = await controller.check();
 

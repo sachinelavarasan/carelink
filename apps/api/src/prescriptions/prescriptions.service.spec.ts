@@ -73,7 +73,7 @@ function makeService(opts: Opts = {}) {
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const service = new PrescriptionsService(db as any, { enqueueMany } as any, storage as any);
+  const service = new PrescriptionsService({ db } as any, { enqueueMany } as any, storage as any);
   return { service, enqueueMany, uploadPrescriptionPdf, apptUpdate, rxUpdate };
 }
 

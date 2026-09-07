@@ -50,7 +50,7 @@ const rows = [
 ];
 
 function service(select: () => unknown) {
-  return new AvailabilityService({ select } as unknown as Database);
+  return new AvailabilityService({ db: { select } } as unknown as Database);
 }
 
 describe('AvailabilityService.listDoctors', () => {

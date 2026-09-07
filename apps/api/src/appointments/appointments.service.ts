@@ -27,8 +27,12 @@ const MIN = 60_000;
 
 @Injectable()
 export class AppointmentsService {
+  private get db() {
+    return this.connection.db;
+  }
+
   constructor(
-    @Inject(DB) private readonly db: Database,
+    @Inject(DB) private readonly connection: Database,
     private readonly availability: AvailabilityService,
     private readonly notifications: NotificationsService,
   ) {}

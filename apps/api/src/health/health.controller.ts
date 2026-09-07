@@ -5,7 +5,11 @@ import type { Database } from '../db';
 
 @Controller('healthz')
 export class HealthController {
-  constructor(@Inject(DB) private readonly db: Database) {}
+  private get db() {
+    return this.connection.db;
+  }
+
+  constructor(@Inject(DB) private readonly connection: Database) {}
 
   @Get()
   async check(): Promise<{ status: string; db: 'up' | 'down'; time: string }> {

@@ -11,7 +11,11 @@ const sha256 = (value: string): string => createHash('sha256').update(value).dig
 
 @Injectable()
 export class TokenService {
-  constructor(@Inject(DB) private readonly db: Database) {}
+  private get db() {
+    return this.connection.db;
+  }
+
+  constructor(@Inject(DB) private readonly connection: Database) {}
 
   /** Creates a token row and returns the raw (unhashed) token to hand to the client. */
   async issue(userId: string, kind: AuthTokenKind, ttlMs: number): Promise<string> {

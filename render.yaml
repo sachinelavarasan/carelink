@@ -26,7 +26,7 @@ services:
 
     # Runs after build, before traffic cuts over. Requires the Starter plan or
     # higher; on Free, run migrations manually (see docs/DEPLOY-RENDER.md).
-    # preDeployCommand: npm run db:migrate --workspace @carelink/api
+    # preDeployCommand: npm run migration:run --workspace @carelink/api
 
     envVars:
       - key: NODE_ENV
@@ -48,9 +48,23 @@ services:
       #   postgresql://postgres.beelkxktvfyanwximwnc:<PASSWORD>@aws-0-<region>.pooler.supabase.com:6543/postgres?pgbouncer=true
       - key: DATABASE_URL
         sync: false
-      # DIRECT_URL — Session pooler, drizzle-kit migrations only:
+      # DIRECT_URL — Session pooler, port 5432 (kept for reference / tooling):
       #   postgresql://postgres.beelkxktvfyanwximwnc:<PASSWORD>@aws-0-<region>.pooler.supabase.com:5432/postgres
       - key: DIRECT_URL
+        sync: false
+
+      # Migrations (`migration:run` / drizzle-kit) read discrete credentials, not
+      # DIRECT_URL. Point these at the same session-pooler host (port 5432).
+      # SSL is enabled because NODE_ENV=production above.
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_NAME
+        value: postgres
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
         sync: false
 
       - key: JWT_ACCESS_SECRET

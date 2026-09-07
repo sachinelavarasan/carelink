@@ -21,6 +21,6 @@
     "moduleResolution": "node",
     "resolveJsonModule": true
   },
-  "include": ["src", "api", "drizzle.config.ts"],
+  "include": ["src", "api"],
   "exclude": ["node_modules", "dist"]
 }

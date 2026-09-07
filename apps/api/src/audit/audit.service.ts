@@ -21,7 +21,11 @@ export interface AuditEntry {
 export class AuditService {
   private readonly logger = new Logger(AuditService.name);
 
-  constructor(@Inject(DB) private readonly db: Database) {}
+  private get db() {
+    return this.connection.db;
+  }
+
+  constructor(@Inject(DB) private readonly connection: Database) {}
 
   async record(entry: AuditEntry): Promise<void> {
     try {

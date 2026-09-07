@@ -21,8 +21,12 @@ const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
+  private get db() {
+    return this.connection.db;
+  }
+
   constructor(
-    @Inject(DB) private readonly db: Database,
+    @Inject(DB) private readonly connection: Database,
     private readonly mail: MailService,
   ) {}
 

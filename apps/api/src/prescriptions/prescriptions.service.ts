@@ -34,8 +34,12 @@ const HISTORY_LIMIT_MAX = 50;
 
 @Injectable()
 export class PrescriptionsService {
+  private get db() {
+    return this.connection.db;
+  }
+
   constructor(
-    @Inject(DB) private readonly db: Database,
+    @Inject(DB) private readonly connection: Database,
     private readonly notifications: NotificationsService,
     private readonly storage: StorageService,
   ) {}

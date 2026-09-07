@@ -68,23 +68,27 @@ here; keep it `lax`.
 
 ## Migrations
 
-Drizzle migrations are **not** run at boot. Apply them against `DIRECT_URL`:
+Drizzle migrations are **not** run at boot. They connect with the discrete
+`DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` vars (see
+`render.yaml`), pointed at the session pooler (port 5432):
 
 - **Starter plan or higher** — uncomment `preDeployCommand` in `render.yaml`:
   ```
-  npm run db:migrate --workspace @carelink/api
+  npm run migration:run --workspace @carelink/api
   ```
   It runs after each build, before traffic switches over.
 
 - **Free plan** (no pre-deploy) — run once from your machine whenever the
-  schema changes, pointing at the same DB:
+  schema changes, with the same `DB_*` vars set:
   ```bash
-  DIRECT_URL='<supabase direct url>' npm run db:migrate --workspace @carelink/api
+  npm run migration:run --workspace @carelink/api
   ```
-  or use the service's **Shell** tab: `npm run db:migrate --workspace @carelink/api`.
+  or use the service's **Shell** tab: `npm run migration:run --workspace @carelink/api`.
 
-Seed the doctor account the same way (`npm run db:seed --workspace @carelink/api`
-with `DOCTOR_EMAIL` / `DOCTOR_PASSWORD` set).
+No seed script ships for production — `seed:run` is a dev-only demo fixture that
+refuses `NODE_ENV=production`. Create the first doctor by promoting a
+self-registered account or inserting a `users` row (`role='DOCTOR'`,
+`email_verified_at` set) plus a verified `doctor_profiles` row.
 
 ## Scheduled jobs
 

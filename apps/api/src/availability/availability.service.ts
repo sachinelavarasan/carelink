@@ -25,7 +25,11 @@ const BOOKED_STATUSES = ['CONFIRMED', 'REQUESTED', 'COMPLETED'] as const;
 
 @Injectable()
 export class AvailabilityService {
-  constructor(@Inject(DB) private readonly db: Database) {}
+  private get db() {
+    return this.connection.db;
+  }
+
+  constructor(@Inject(DB) private readonly connection: Database) {}
 
   async listDoctors(query: Partial<ListDoctorsQuery> = {}): Promise<DoctorPublic[]> {
     const rows = await this.db

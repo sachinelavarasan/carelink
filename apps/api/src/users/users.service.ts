@@ -27,7 +27,11 @@ import {
 
 @Injectable()
 export class UsersService {
-  constructor(@Inject(DB) private readonly db: Database) {}
+  private get db() {
+    return this.connection.db;
+  }
+
+  constructor(@Inject(DB) private readonly connection: Database) {}
 
   async getMe(userId: string): Promise<Me> {
     const user = await this.db.query.users.findFirst({ where: eq(users.id, userId) });

@@ -41,7 +41,7 @@ function makeService(user: FakeUser | null) {
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const service = new AuthService(db as any, jwt as any, config as any, tokens as any, mail as any);
+  const service = new AuthService({ db } as any, jwt as any, config as any, tokens as any, mail as any);
   return { service, mail, tokens, jwt };
 }
 

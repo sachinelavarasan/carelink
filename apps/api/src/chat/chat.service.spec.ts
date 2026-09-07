@@ -49,7 +49,7 @@ function makeService(threadWindow: { opensAt: Date; closesAt: Date }) {
     insert: () => ({ values: () => ({ returning: insertReturning }) }),
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const service = new ChatService(db as any, { enqueueMany } as any);
+  const service = new ChatService({ db } as any, { enqueueMany } as any);
   return { service, enqueueMany, insertReturning };
 }
 

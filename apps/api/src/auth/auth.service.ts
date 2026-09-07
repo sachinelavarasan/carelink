@@ -29,8 +29,12 @@ const BCRYPT_ROUNDS = 12;
 
 @Injectable()
 export class AuthService {
+  private get db() {
+    return this.connection.db;
+  }
+
   constructor(
-    @Inject(DB) private readonly db: Database,
+    @Inject(DB) private readonly connection: Database,
     private readonly jwt: JwtService,
     private readonly config: ConfigService<AppConfig, true>,
     private readonly tokens: TokenService,

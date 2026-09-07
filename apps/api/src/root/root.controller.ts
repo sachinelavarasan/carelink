@@ -6,7 +6,11 @@ import { renderStatusPage, type ServerStatus } from './status-page';
 
 @Controller()
 export class RootController {
-  constructor(@Inject(DB) private readonly db: Database) {}
+  private get db() {
+    return this.connection.db;
+  }
+
+  constructor(@Inject(DB) private readonly connection: Database) {}
 
   /** Root `/` — human-readable server status rendered as a card. */
   @Get()

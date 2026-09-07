@@ -190,9 +190,9 @@ short-lived signed URL and streams them (the browser never hits Cloudinary).
   `carelink_access` cookie. `RolesGuard` enforces `PATIENT` / `DOCTOR` / `ADMIN`.
 - Cookie flags via env: `COOKIE_SECURE` (default = prod), `COOKIE_SAMESITE`
   (`lax`; use `none` only for split web/API sites), `COOKIE_DOMAIN`.
-- **Doctor account**: created once by `npm run db:seed` (`DOCTOR_EMAIL` +
-  `DOCTOR_PASSWORD`) — `role = DOCTOR`, `emailVerifiedAt` + `DoctorProfile.verifiedAt`
-  set. Patients self-register.
+- **Doctor account**: `role = DOCTOR` with `emailVerifiedAt` + `DoctorProfile.verifiedAt`
+  set. In dev, `npm run seed:run` creates demo doctors; in prod, insert directly or
+  promote a registered account (no prod seed script). Patients self-register.
 - Rate-limit `login` / `register` / `forgot` (`@nestjs/throttler`).
 
 ## 8. Core flows

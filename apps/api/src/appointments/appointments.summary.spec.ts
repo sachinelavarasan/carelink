@@ -8,7 +8,7 @@ function serviceWithRows(
     select: () => ({ from: () => ({ where: () => Promise.resolve(rows) }) }),
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return new AppointmentsService(db as any, {} as any, {} as any);
+  return new AppointmentsService({ db } as any, {} as any, {} as any);
 }
 
 const user = { id: 'u1', role: 'DOCTOR' as const };

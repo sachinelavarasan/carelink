@@ -6,7 +6,7 @@ describe('AuditService.record', () => {
   it('maps the entry onto an audit_logs insert', async () => {
     const values = vi.fn().mockResolvedValue(undefined);
     const db = { insert: () => ({ values }) } as unknown as Database;
-    const service = new AuditService(db);
+    const service = new AuditService({ db } as unknown as Database);
 
     await service.record({
       actorUserId: 'u1',
@@ -33,7 +33,7 @@ describe('AuditService.record', () => {
         },
       }),
     } as unknown as Database;
-    const service = new AuditService(db);
+    const service = new AuditService({ db } as unknown as Database);
     await expect(
       service.record({ action: 'x', entityType: 'y', entityId: 'z' }),
     ).resolves.toBeUndefined();

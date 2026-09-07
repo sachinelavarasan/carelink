@@ -33,22 +33,20 @@ cp apps/web/.env.example    apps/web/.env
 cp apps/mobile/.env.example apps/mobile/.env
 # fill in Supabase URL / keys / DB connection strings
 
-npm run db:generate --workspace @carelink/api   # create SQL migration from schema
-npm run db:migrate  --workspace @carelink/api   # apply to Supabase
+npm run migration:generate --workspace @carelink/api   # create SQL migration from schema
+npm run migration:run      --workspace @carelink/api   # apply to Supabase
 ```
 
-Seed the single doctor account:
+Seed demo data — 2 verified doctors + 5 patients, each with a past and an
+upcoming appointment (10 total), plus chat threads and weekday availability.
+Dev only; refuses `NODE_ENV=production`. All accounts use password `password123`
+(override with `SEED_PASSWORD`):
 
 ```bash
-DOCTOR_EMAIL=doc@example.com DOCTOR_PASSWORD='<strong-pw>' \
-  npm run db:seed --workspace @carelink/api
-```
-
-Local dev shortcut — pre-verified test patient + doctor (`password123`):
-
-```bash
-npm run db:seed:test --workspace @carelink/api
-# patient@test.local / doctor@test.local
+npm run seed:run --workspace @carelink/api
+# doctors:  aarav.sharma@carelink.dev, beatriz.lima@carelink.dev
+# patients: priya.nair@example.com, rahul.verma@example.com, sara.khan@example.com,
+#           vikram.rao@example.com, meera.iyer@example.com
 ```
 
 ## Auth (M1)

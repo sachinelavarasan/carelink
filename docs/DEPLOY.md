@@ -124,13 +124,14 @@ Workflows already in the repo: `ci.yml` (build/lint/test), `cron.yml` (every 5 m
 
 1. **Supabase**: create project (Mumbai/Singapore). Copy `DATABASE_URL` + `DIRECT_URL`.
 2. **Run migrations** against the new DB:
-   `DATABASE_URL=<direct-url> npm run db:migrate --workspace @carelink/api`
-   (use the *direct* URL for migrations; applies `0000`–`0002`).
-3. **Seed the first doctor** — set `DOCTOR_EMAIL`, `DOCTOR_PASSWORD`, `DOCTOR_NAME`,
-   `DOCTOR_COUNCIL`, `DOCTOR_REG_NO`, `DOCTOR_QUALIFICATIONS`,
-   `DOCTOR_SPECIALIZATIONS` (comma list), `DOCTOR_YEARS`, `DOCTOR_FEE_INR`, then
-   `npm run db:seed --workspace @carelink/api`. Repeat per doctor. (Seeded doctors
-   are created already‑verified; patients self‑register.)
+   `npm run migration:run --workspace @carelink/api`
+   (set `DB_HOST`/`DB_PORT`/`DB_NAME`/`DB_USER`/`DB_PASSWORD` to the *direct*
+   port-5432 connection; applies `0000`–`0002`).
+3. **Create the first doctor** — no seed script ships for production (`seed:run`
+   is a dev-only demo fixture and refuses `NODE_ENV=production`). Either promote a
+   self-registered account or insert directly: a `users` row with `role='DOCTOR'`
+   and `email_verified_at` set, plus a `doctor_profiles` row with `verified_at`
+   set. Repeat per doctor. Patients self‑register.
 4. **Cloudinary / SMTP / Sentry**: create, copy keys.
 5. **Cloudflare R2**: create bucket + S3 API token.
 6. **Vercel**: import the repo twice (`carelink-api` root `apps/api`, `carelink-web`
@@ -152,8 +153,9 @@ Workflows already in the repo: `ci.yml` (build/lint/test), `cron.yml` (every 5 m
   sites* — cookie auth then needs `COOKIE_SAMESITE=none` + `COOKIE_SECURE=true`.
   Much simpler: use a real domain with `app.` / `api.` subdomains and keep
   `SAMESITE=lax`.
-- **Migrations use `DIRECT_URL`** (port 5432), not the pooled URL — drizzle‑kit
-  needs a non‑pgBouncer connection.
+- **Migrations use the discrete `DB_*` vars** (`DB_HOST`/`DB_PORT`/`DB_NAME`/
+  `DB_USER`/`DB_PASSWORD`) — point them at the direct port‑5432 connection, not
+  the pooled URL; drizzle‑kit and `migration:run` need a non‑pgBouncer connection.
 - **Supabase 7‑day pause** is only prevented while `cron.yml` is running — don’t
   disable it.
 - **`pg_dump` version**: the backup workflow installs `postgresql-client-16` to

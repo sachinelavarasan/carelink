@@ -61,7 +61,7 @@ function makeService(opts: {
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const service = new VideoService(db as any, { enqueueMany } as any, {
+  const service = new VideoService({ db } as any, { enqueueMany } as any, {
     get: () => 'meet.jit.si',
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any);

@@ -2,16 +2,18 @@ import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema';
 
-export type Database = PostgresJsDatabase<typeof schema>;
+type Db = PostgresJsDatabase<typeof schema>;
 
-let cached: { client: postgres.Sql; db: Database } | undefined;
+let cached: { client: postgres.Sql; db: Db } | undefined;
 
 /**
- * Returns a singleton Drizzle client. On Vercel serverless the module is reused
- * across warm invocations, so we keep one small pool. Point DATABASE_URL at
- * Supabase's pooled (pgBouncer, port 6543) connection string.
+ * Returns a singleton Drizzle client for standalone scripts (seeds, migrations)
+ * that run outside the Nest DI container. Inside the app, inject the `DB`
+ * provider from `db.module.ts` instead. On Vercel serverless the module is
+ * reused across warm invocations, so we keep one small pool. Point DATABASE_URL
+ * at Supabase's pooled (pgBouncer, port 6543) connection string.
  */
-export function getDb(connectionString = process.env.DATABASE_URL): Database {
+export function getDb(connectionString = process.env.DATABASE_URL): Db {
   if (!connectionString) {
     throw new Error('DATABASE_URL is not set');
   }
@@ -27,3 +29,4 @@ export function getDb(connectionString = process.env.DATABASE_URL): Database {
 }
 
 export { schema };
+export type { Database } from './types/Database';

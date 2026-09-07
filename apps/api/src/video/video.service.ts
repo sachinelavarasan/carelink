@@ -26,8 +26,12 @@ const CLOSE_AFTER_MS = 30 * 60_000;
 export class VideoService {
   private readonly domain: string;
 
+  private get db() {
+    return this.connection.db;
+  }
+
   constructor(
-    @Inject(DB) private readonly db: Database,
+    @Inject(DB) private readonly connection: Database,
     private readonly notifications: NotificationsService,
     config: ConfigService<AppConfig, true>,
   ) {
