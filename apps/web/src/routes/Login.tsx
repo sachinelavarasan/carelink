@@ -68,12 +68,9 @@ export default function Login() {
           </Button>
         </FieldGroup>
       </form>
-      <div className="mt-4 flex justify-between text-sm">
+      <div className="mt-4 text-sm">
         <Link className="text-primary underline underline-offset-4" to="/forgot">
           Forgot password?
-        </Link>
-        <Link className="text-primary underline underline-offset-4" to="/register">
-          Create account
         </Link>
       </div>
     </AuthLayout>
