@@ -51,7 +51,7 @@ export default function Register() {
   }
 
   return (
-    <AuthLayout title="Create your CareLink account">
+    <AuthLayout title="Create your account">
       {error && <Notice kind="error">{error}</Notice>}
       <form onSubmit={onSubmit}>
         <FieldGroup>
