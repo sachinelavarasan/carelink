@@ -22,6 +22,34 @@
       "when": 1788765511237,
       "tag": "0002_video_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788802435541,
+      "tag": "0003_doctor_favorite_medicines",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788802435542,
+      "tag": "0004_drop_refresh_token_kind",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788804484942,
+      "tag": "0005_drop_auth_tokens",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788806526858,
+      "tag": "0006_clinic_details",
+      "breakpoints": true
     }
   ]
 }

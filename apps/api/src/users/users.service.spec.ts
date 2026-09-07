@@ -2,7 +2,13 @@ import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 import { describe, expect, it, vi } from 'vitest';
 import type { Database } from '../db';
+import type { StorageService } from '../storage/storage.service';
 import { UsersService } from './users.service';
+
+const storageStub = {
+  uploadAvatar: vi.fn(),
+  deleteAvatar: vi.fn(),
+} as unknown as StorageService;
 
 const passwordHash = bcrypt.hashSync('correct-horse', 4);
 
@@ -13,7 +19,7 @@ function makeService(user: { id: string; passwordHash: string } | null) {
     query: { users: { findFirst: vi.fn().mockResolvedValue(user) } },
     transaction: (fn: (t: typeof tx) => Promise<unknown>) => fn(tx),
   } as unknown as Database;
-  return { service: new UsersService({ db } as unknown as Database), del };
+  return { service: new UsersService({ db } as unknown as Database, storageStub), del };
 }
 
 describe('UsersService.deleteAccount', () => {

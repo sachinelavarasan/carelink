@@ -14,10 +14,12 @@ import { Throttle } from '@nestjs/throttler';
 import {
   createPrescriptionSchema,
   cursorQuerySchema,
+  medicalHistoryQuerySchema,
   updatePrescriptionSchema,
   type CreatePrescriptionInput,
   type CursorQuery,
   type MedicalHistory,
+  type MedicalHistoryQuery,
   type PrescriptionView,
   type UpdatePrescriptionInput,
 } from '@carelink/shared';
@@ -90,7 +92,7 @@ export class PrescriptionsController {
   @Roles('PATIENT')
   myHistory(
     @CurrentUser() user: AuthUser,
-    @Query(new ZodValidationPipe(cursorQuerySchema)) query: CursorQuery,
+    @Query(new ZodValidationPipe(medicalHistoryQuerySchema)) query: MedicalHistoryQuery,
   ): Promise<MedicalHistory> {
     return this.prescriptions.myHistory(user, query);
   }

@@ -1,10 +1,12 @@
 import type { DoctorPublic, DoctorSort, VisitedDoctor } from '@carelink/shared';
 import { useQuery } from '@tanstack/react-query';
+import { SearchXIcon } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
+import { CardGridSkeleton, cardGridClass } from '../components/CardGridSkeleton';
+import { EmptyState } from '../components/EmptyState';
 import { Notice } from '../components/Notice';
-import { Spinner } from '../components/Spinner';
 import { Card, CardContent } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import {
@@ -117,9 +119,9 @@ export default function Doctors() {
         </div>
 
         {doctorsQ.isLoading && (
-          <p className="mt-4 inline-flex items-center gap-2 text-sm text-muted-foreground">
-            <Spinner /> Loading…
-          </p>
+          <div className="mt-4">
+            <CardGridSkeleton count={6} />
+          </div>
         )}
         {doctorsQ.isError && (
           <div className="mt-4">
@@ -127,10 +129,16 @@ export default function Doctors() {
           </div>
         )}
         {doctorsQ.data && doctorsQ.data.length === 0 && (
-          <p className="mt-4 text-sm text-muted-foreground">No doctors match that search.</p>
+          <div className="mt-4">
+            <EmptyState
+              icon={SearchXIcon}
+              title="No doctors match that search"
+              description="Try a different name, specialization, or clear the filters."
+            />
+          </div>
         )}
 
-        <div className="mt-4 grid gap-3">
+        <div className={`mt-4 ${cardGridClass}`}>
           {doctorsQ.data?.map((d) => (
             <Card key={d.id}>
               <CardContent className="grid gap-1">

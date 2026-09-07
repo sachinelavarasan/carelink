@@ -7,6 +7,7 @@ import {
 import bcrypt from 'bcryptjs';
 import { eq, or } from 'drizzle-orm';
 import type {
+  AvatarResult,
   DoctorProfileInput,
   DoctorProfileOut,
   Me,
@@ -15,6 +16,7 @@ import type {
 } from '@carelink/shared';
 import { DB } from '../db/db.module';
 import type { Database } from '../db';
+import { StorageService } from '../storage/storage.service';
 import {
   appointments,
   doctorProfiles,
@@ -31,7 +33,10 @@ export class UsersService {
     return this.connection.db;
   }
 
-  constructor(@Inject(DB) private readonly connection: Database) {}
+  constructor(
+    @Inject(DB) private readonly connection: Database,
+    private readonly storage: StorageService,
+  ) {}
 
   async getMe(userId: string): Promise<Me> {
     const user = await this.db.query.users.findFirst({ where: eq(users.id, userId) });
@@ -84,12 +89,28 @@ export class UsersService {
         .where(
           or(eq(medicalDocuments.patientId, userId), eq(medicalDocuments.uploadedById, userId)),
         );
-      // Cascades: auth_tokens, patient/doctor profiles (→ availability_*),
-      // notifications, push_tokens, any remaining medical_documents by patientId.
+      // Cascades: patient/doctor profiles (→ availability_*), notifications,
+      // push_tokens, any remaining medical_documents by patientId.
       await tx.delete(users).where(eq(users.id, userId));
     });
 
     return { ok: true };
+  }
+
+  /** Uploads a new avatar to storage and points the user row at its URL. */
+  async setAvatar(userId: string, image: Buffer): Promise<AvatarResult> {
+    const user = await this.db.query.users.findFirst({ where: eq(users.id, userId) });
+    if (!user) throw new NotFoundException('user not found');
+    const avatarUrl = await this.storage.uploadAvatar(userId, image);
+    await this.db.update(users).set({ avatarUrl }).where(eq(users.id, userId));
+    return { avatarUrl };
+  }
+
+  /** Clears the user's avatar — deletes the stored asset, nulls the column. */
+  async clearAvatar(userId: string): Promise<AvatarResult> {
+    await this.storage.deleteAvatar(userId);
+    await this.db.update(users).set({ avatarUrl: null }).where(eq(users.id, userId));
+    return { avatarUrl: null };
   }
 
   async upsertPatientProfile(userId: string, input: PatientProfileInput): Promise<PatientProfileOut> {
@@ -141,6 +162,10 @@ export class UsersService {
       bio: row.bio ?? undefined,
       consultationFeeInr: row.consultationFeeInr,
       clinicName: row.clinicName ?? undefined,
+      clinicAddress: row.clinicAddress ?? undefined,
+      clinicMapUrl: row.clinicMapUrl ?? undefined,
+      clinicPhone: row.clinicPhone ?? undefined,
+      favoriteMedicines: row.favoriteMedicines ?? [],
       verifiedAt: row.verifiedAt ? row.verifiedAt.toISOString() : null,
       updatedAt: row.updatedAt.toISOString(),
     };

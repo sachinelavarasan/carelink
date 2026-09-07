@@ -51,18 +51,6 @@ describe('AuditInterceptor', () => {
     expect(record).not.toHaveBeenCalled();
   });
 
-  it('skips the refresh route', async () => {
-    const { interceptor, record } = setup();
-    const req = {
-      method: 'POST',
-      url: '/api/v1/auth/refresh',
-      route: { path: '/api/v1/auth/refresh' },
-      headers: {},
-    };
-    await lastValueFrom(interceptor.intercept(makeCtx(req), handler));
-    expect(record).not.toHaveBeenCalled();
-  });
-
   it('takes the first hop from x-forwarded-for and tolerates no auth user', async () => {
     const { interceptor, record } = setup();
     const req = {

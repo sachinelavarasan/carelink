@@ -1,5 +1,5 @@
-import { lazy } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { lazy, useEffect } from 'react';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Appointments from './routes/Appointments';
 import Availability from './routes/Availability';
@@ -11,9 +11,11 @@ import Doctors from './routes/Doctors';
 import ForgotPassword from './routes/ForgotPassword';
 import Login from './routes/Login';
 import MedicalHistory from './routes/MedicalHistory';
+import MyDoctors from './routes/MyDoctors';
+import Patients from './routes/Patients';
 import Prescription from './routes/Prescription';
 import Profile from './routes/Profile';
-import Register from './routes/Register';
+// import Register from './routes/Register'; // self-signup hidden for now
 import ResetPassword from './routes/ResetPassword';
 import VerifyEmail from './routes/VerifyEmail';
 import VideoCall from './routes/VideoCall';
@@ -22,12 +24,26 @@ const ChartPreview = lazy(() => import('./routes/__ChartPreview'));
 
 const protect = (el: React.ReactNode) => <ProtectedRoute>{el}</ProtectedRoute>;
 
+/** Every navigation lands at the top of the page, so the header is in view
+ *  after a back/forward move, not wherever the previous screen was scrolled. */
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 export default function App() {
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       <Route path="/__chart" element={<ChartPreview />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      {/* Self-signup hidden for now — accounts are provisioned. */}
+      <Route path="/register" element={<Navigate to="/login" replace />} />
+      <Route path="/signup" element={<Navigate to="/login" replace />} />
       <Route path="/verify" element={<VerifyEmail />} />
       <Route path="/forgot" element={<ForgotPassword />} />
       <Route path="/reset" element={<ResetPassword />} />
@@ -41,6 +57,9 @@ export default function App() {
         element={protect(<Prescription />)}
       />
       <Route path="/history" element={protect(<MedicalHistory />)} />
+      <Route path="/my-doctors" element={protect(<MyDoctors />)} />
+      <Route path="/my-doctors/:doctorId" element={protect(<MedicalHistory />)} />
+      <Route path="/patients" element={protect(<Patients />)} />
       <Route path="/patients/:patientId/history" element={protect(<MedicalHistory />)} />
       <Route path="/doctors" element={protect(<Doctors />)} />
       <Route path="/doctors/:id" element={protect(<DoctorProfile />)} />
@@ -50,5 +69,6 @@ export default function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }

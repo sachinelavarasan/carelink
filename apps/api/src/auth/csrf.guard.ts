@@ -1,6 +1,6 @@
 import { type CanActivate, type ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import type { Request } from 'express';
-import { ACCESS_COOKIE, CSRF_COOKIE, REFRESH_COOKIE } from './cookies';
+import { ACCESS_COOKIE, CSRF_COOKIE } from './cookies';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
@@ -20,8 +20,7 @@ export class CsrfGuard implements CanActivate {
     if ((req.headers.authorization ?? '').startsWith('Bearer ')) return true;
 
     const cookies = req.cookies ?? {};
-    const hasAuthCookie = Boolean(cookies[ACCESS_COOKIE] || cookies[REFRESH_COOKIE]);
-    if (!hasAuthCookie) return true;
+    if (!cookies[ACCESS_COOKIE]) return true;
 
     const cookieToken = cookies[CSRF_COOKIE];
     const headerToken = req.headers['x-csrf-token'];

@@ -45,32 +45,7 @@ export const users = pgTable(
   }),
 );
 
-export const authTokenKind = pgEnum('auth_token_kind', [
-  'EMAIL_VERIFY',
-  'PASSWORD_RESET',
-  'REFRESH',
-]);
-
-/** One row per issued email-verification / password-reset / refresh token.
- *  Only the SHA-256 hash of the token is stored. */
-export const authTokens = pgTable(
-  'auth_tokens',
-  {
-    id: uuid('id').primaryKey().defaultRandom(),
-    userId: uuid('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    kind: authTokenKind('kind').notNull(),
-    tokenHash: text('token_hash').notNull(),
-    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-    consumedAt: timestamp('consumed_at', { withTimezone: true }),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => ({
-    tokenHashIdx: uniqueIndex('auth_tokens_token_hash_idx').on(t.tokenHash),
-    byUserKind: index('auth_tokens_user_kind_idx').on(t.userId, t.kind),
-  }),
-);
+// Email-verification and password-reset links are stateless JWTs — no table.
 
 export const patientProfiles = pgTable('patient_profiles', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -108,6 +83,22 @@ export const doctorProfiles = pgTable(
     bio: text('bio'),
     consultationFeeInr: integer('consultation_fee_inr').notNull().default(0),
     clinicName: text('clinic_name'),
+    clinicAddress: text('clinic_address'),
+    clinicMapUrl: text('clinic_map_url'), // Google/Apple Maps link, shown to patients as "Get directions"
+    clinicPhone: text('clinic_phone'),
+    favoriteMedicines: jsonb('favorite_medicines')
+      .notNull()
+      .default([])
+      .$type<
+        {
+          drugName: string;
+          strength?: string;
+          form?: string;
+          frequency: string;
+          durationDays: number;
+          instructions?: string;
+        }[]
+      >(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
@@ -407,7 +398,6 @@ export const prescriptionItemsRelations = relations(prescriptionItems, ({ one })
 
 export type DbSchema = {
   users: typeof users;
-  authTokens: typeof authTokens;
   patientProfiles: typeof patientProfiles;
   doctorProfiles: typeof doctorProfiles;
   availabilityRules: typeof availabilityRules;

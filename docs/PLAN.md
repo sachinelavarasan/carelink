@@ -75,7 +75,7 @@ with the doctor's own patients + clear consent; revisit before a public launch.
 | Push | **Expo Push Notifications** | Free. |
 | API | **NestJS** as **Vercel serverless functions** (REST only; single handler via `serverless-http` wrapping the Express instance) | Free. Cold start ~1–2s, scales to zero, no forced sleep. No WebSockets, no long-running processes. |
 | Database | **Supabase Postgres** + **Drizzle ORM** (drizzle-kit migrations) | Free: 500 MB DB, Singapore region. **Pauses after 7 days inactivity** — the reminder cron doubles as a keep-alive. |
-| Auth | **Own email + password** in NestJS — bcrypt hashes, `@nestjs/jwt` access (15 min) + refresh (30 d) tokens, email-verification + password-reset tokens (SHA-256 hashed in `auth_tokens`). No third-party auth. | Free. Phone OTP + Google sign-in deferred to v2. |
+| Auth | **Own email + password** in NestJS — bcrypt hashes, a single `@nestjs/jwt` access token (7 d, no refresh), email-verification + password-reset tokens (SHA-256 hashed in `auth_tokens`). No third-party auth. | Free. Phone OTP + Google sign-in deferred to v2. |
 | Realtime chat | **v1: short polling** (web re-fetches the thread every 4 s while open). **Supabase Realtime deferred** — `postgres_changes` + a short-lived channel JWT the API mints with `SUPABASE_JWT_SECRET`; wire it once a real Supabase project exists. No Socket.IO. | Polling is free and fine for one doctor. Realtime free tier: 200 concurrent, 2M msgs/mo. |
 | File storage | **Cloudinary** — prescription PDFs (M4); chat attachments + medical documents later. Uploads are `type: authenticated` / `resource_type: raw`; the browser never hits Cloudinary — the API fetches bytes back with a short-lived signed URL and streams them. If `CLOUDINARY_URL` is unset the PDF is rendered on demand instead (nothing stored). | Free: 25 monthly credits (~25 GB storage or bandwidth). Cloudflare R2 (10 GB) is the fallback. |
 | Scheduled jobs | **GitHub Actions cron** → calls a secret-protected `POST /api/v1/jobs/run` route every 5 min (reminders + Supabase keep-alive) | Free for this size. Vercel Hobby cron is too limited for 5-min cadence. |
@@ -115,7 +115,7 @@ enums (`AppointmentStatus`, `UserRole`, …), inferred types used by all three a
 User            id, role(PATIENT|DOCTOR|ADMIN), email, passwordHash,
                 emailVerifiedAt?, phone, fullName, avatarUrl, createdAt, disabledAt
 
-AuthToken       userId→User, kind(EMAIL_VERIFY|PASSWORD_RESET|REFRESH),
+AuthToken       userId→User, kind(EMAIL_VERIFY|PASSWORD_RESET),
                 tokenHash, expiresAt, consumedAt?, createdAt
 
 PatientProfile  userId→User, dob, gender, bloodGroup, heightCm, weightKg,
@@ -173,10 +173,8 @@ short-lived signed URL and streams them (the browser never hits Cloudinary).
   verification link via Nodemailer.
 - `GET /auth/verify?token=…` — marks `emailVerifiedAt`, consumes the token.
 - `POST /auth/login` — checks the hash; unverified emails are rejected. Returns a
-  short-lived **access JWT** (15 min, `@nestjs/jwt`, `JWT_ACCESS_SECRET`) and a
-  **refresh token** (opaque random, stored hashed as `kind=REFRESH`, 30 d).
-- `POST /auth/refresh` — rotates: consumes the presented refresh token, issues a
-  new pair. `POST /auth/logout` consumes it.
+  **access JWT** (7 d, `@nestjs/jwt`, `JWT_ACCESS_SECRET`). No refresh token —
+  `POST /auth/logout` just clears the cookie.
 - `POST /auth/forgot` / `POST /auth/reset` — `PASSWORD_RESET` token by email, 1 h TTL.
 - **Token transport differs by client:**
   - **Web** — the API sets `carelink_access` + `carelink_refresh` as **httpOnly,
@@ -249,7 +247,7 @@ short-lived signed URL and streams them (the browser never hits Cloudinary).
 - `DocumentsModule` — signed upload/download, list by patient (Tier 2; reuses `StorageModule`)
 - `NotificationsModule` — Expo push, email senders
 - `JobsModule` — `POST /jobs/run` (cron-key-protected): due reminders + keep-alive
-- `AuditModule` — global `AuditInterceptor` (`@Global`): one `audit_logs` row per **successful** mutating request (method + mounted route + entity type/id from params, actor, first-hop IP, user-agent). No request bodies, no PHI. `POST /auth/refresh` excluded as noise. Writes are best-effort — a failed audit never fails the request.
+- `AuditModule` — global `AuditInterceptor` (`@Global`): one `audit_logs` row per **successful** mutating request (method + mounted route + entity type/id from params, actor, first-hop IP, user-agent). No request bodies, no PHI. Writes are best-effort — a failed audit never fails the request.
 - `HealthModule` — `GET /healthz`
 
 Style: `/api/v1/...`, zod-validated DTOs from `packages/shared`, cursor pagination.
@@ -347,7 +345,7 @@ private, signed URLs ≤ 5 min, UUID keys.
   booking, chat-send and prescription writes. ✅
 - `/jobs/run` gated by a long random `CRON_SECRET` header.
 - Audit log on every successful mutation via a global `AuditInterceptor`
-  (`AuditModule`); no bodies, no PHI, `POST /auth/refresh` excluded. ✅ Failed
+  (`AuditModule`); no bodies, no PHI. ✅ Failed
   requests are not audited (add error-path auditing if an incident review needs it).
 - zod validation on every boundary.
 - Dependabot; **Sentry** for runtime errors — env-gated (`SENTRY_DSN` / `VITE_SENTRY_DSN`), a global `SentryExceptionFilter` reports 5xx then re-delegates. ✅

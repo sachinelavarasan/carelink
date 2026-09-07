@@ -41,6 +41,9 @@ const DOCTORS = [
     consultationFeeInr: 800,
     bio: 'Consultant cardiologist — heart-failure and preventive cardiology clinic.',
     clinicName: 'CareLink Heart Clinic',
+    clinicAddress: '2nd Floor, 14 Greams Road, Thousand Lights, Chennai 600006',
+    clinicMapUrl: 'https://maps.google.com/?q=Greams+Road+Chennai',
+    clinicPhone: '+91 44 2829 0200',
   },
   {
     email: 'doctor.test2@gmail.com',
@@ -53,6 +56,9 @@ const DOCTORS = [
     consultationFeeInr: 500,
     bio: 'Skin, hair and nail disorders; teledermatology follow-ups.',
     clinicName: null,
+    clinicAddress: null,
+    clinicMapUrl: null,
+    clinicPhone: null,
   },
 ];
 
@@ -116,6 +122,9 @@ async function main(): Promise<void> {
           consultationFeeInr: d.consultationFeeInr,
           bio: d.bio,
           clinicName: d.clinicName,
+          clinicAddress: d.clinicAddress,
+          clinicMapUrl: d.clinicMapUrl,
+          clinicPhone: d.clinicPhone,
           verifiedAt,
         })
         .onConflictDoUpdate({
