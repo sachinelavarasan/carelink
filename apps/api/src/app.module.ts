@@ -47,7 +47,13 @@ import { VideoModule } from './video/video.module';
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
-    { provide: APP_GUARD, useClass: CsrfGuard },
+    // CSRF double-submit guard. Temporarily switchable off via CSRF_DISABLED=true
+    // while the web app and API are on different sites: stale cross-site cookies
+    // trip the check on POST /auth/login and surface as a bogus 403. Remove the
+    // flag once the Vercel same-origin proxy is live.
+    ...(process.env.CSRF_DISABLED === 'true'
+      ? []
+      : [{ provide: APP_GUARD, useClass: CsrfGuard }]),
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],
 })
