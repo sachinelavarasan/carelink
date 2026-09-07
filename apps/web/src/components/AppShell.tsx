@@ -9,8 +9,10 @@ import { Button } from './ui/button';
 
 const navLink = ({ isActive }: { isActive: boolean }) =>
   cn(
-    'rounded-md px-1 py-0.5 text-sm transition-colors',
-    isActive ? 'font-semibold text-primary' : 'text-muted-foreground hover:text-foreground',
+    'rounded-full px-3 py-1 text-sm font-medium transition-colors',
+    isActive
+      ? 'bg-primary/10 text-primary'
+      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
   );
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -21,7 +23,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-background text-foreground">
       <header className="flex items-center gap-5 border-b border-border px-5 py-3">
         <strong className="text-base font-semibold">CareLink</strong>
-        <nav className="flex flex-1 items-center gap-4">
+        <nav className="flex flex-1 items-center gap-1">
           <NavLink to="/" end className={navLink}>
             Dashboard
           </NavLink>

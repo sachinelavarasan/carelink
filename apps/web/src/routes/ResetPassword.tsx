@@ -4,7 +4,7 @@ import { AuthLayout } from '../components/AuthLayout';
 import { Notice } from '../components/Notice';
 import { Button } from '../components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '../components/ui/field';
-import { Input } from '../components/ui/input';
+import { PasswordInput } from '../components/ui/password-input';
 import { api, errMessage } from '../lib/api';
 
 export default function ResetPassword() {
@@ -53,9 +53,8 @@ export default function ResetPassword() {
           <FieldGroup>
             <Field>
               <FieldLabel htmlFor={pwId}>New password (min 8 characters)</FieldLabel>
-              <Input
+              <PasswordInput
                 id={pwId}
-                type="password"
                 autoComplete="new-password"
                 minLength={8}
                 required

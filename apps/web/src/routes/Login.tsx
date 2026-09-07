@@ -5,6 +5,7 @@ import { Notice } from '../components/Notice';
 import { Button } from '../components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '../components/ui/field';
 import { Input } from '../components/ui/input';
+import { PasswordInput } from '../components/ui/password-input';
 import { errMessage, isStatus } from '../lib/api';
 import { useAuth } from '../lib/auth';
 
@@ -54,9 +55,8 @@ export default function Login() {
           </Field>
           <Field>
             <FieldLabel htmlFor={pwId}>Password</FieldLabel>
-            <Input
+            <PasswordInput
               id={pwId}
-              type="password"
               autoComplete="current-password"
               required
               value={password}
