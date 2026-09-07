@@ -52,9 +52,6 @@ export const loginSchema = z.object({
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 
-export const refreshSchema = z.object({ refreshToken: z.string().min(1) });
-export type RefreshInput = z.infer<typeof refreshSchema>;
-
 export const verifyEmailQuerySchema = z.object({ token: z.string().min(1) });
 
 export const forgotPasswordSchema = z.object({ email: emailField });
@@ -66,10 +63,10 @@ export const resetPasswordSchema = z.object({
 });
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
+/** Login response — a single access token, no refresh. */
 export const authTokensSchema = z.object({
   accessToken: z.string(),
-  refreshToken: z.string(),
-  expiresIn: z.number().int().positive(),
+  expiresIn: z.number().int().positive(), // seconds
 });
 export type AuthTokens = z.infer<typeof authTokensSchema>;
 

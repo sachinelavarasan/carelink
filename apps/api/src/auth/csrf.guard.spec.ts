@@ -41,7 +41,7 @@ describe('CsrfGuard', () => {
         ctx({
           method: 'POST',
           headers: { 'x-csrf-token': 'nope' },
-          cookies: { carelink_refresh: 'r', carelink_csrf: 'tok' },
+          cookies: { carelink_access: 'a', carelink_csrf: 'tok' },
         }),
       ),
     ).toThrow(ForbiddenException);

@@ -16,11 +16,9 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url().optional(),
   DIRECT_URL: z.string().url().optional(),
 
-  // Our own auth — required
+  // Our own auth — a single access token, no refresh.
   JWT_ACCESS_SECRET: z.string().min(24),
-  JWT_REFRESH_SECRET: z.string().min(24),
-  JWT_ACCESS_TTL: z.string().default('15m'),
-  JWT_REFRESH_TTL: z.string().default('30d'),
+  JWT_ACCESS_TTL: z.string().default('7d'),
 
   // Transactional email (Nodemailer SMTP) — optional; if unset, the mailer logs
   // links to the console instead of sending (fine for early local dev).
