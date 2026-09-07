@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://carelink-api-fsog.onrender.com/api/:path*"
+      "destination": "https://carelink-backend-two.vercel.app/api/:path*"
     },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
