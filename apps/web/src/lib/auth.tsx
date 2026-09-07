@@ -1,4 +1,4 @@
-import type { LoginInput, Me, RegisterInput } from '@carelink/shared';
+import { meSchema, type LoginInput, type Me, type RegisterInput } from '@carelink/shared';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { api } from './api';
@@ -23,7 +23,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const reload = useCallback(async () => {
     try {
       const { data } = await api.get<Me>('/me');
-      setMe(data);
+      // A misconfigured VITE_API_URL can make `/me` resolve to the SPA's own
+      // index.html (200 + HTML body). Validate against the contract so that
+      // surfaces as "anonymous" instead of crashing on `me.user.role`.
+      setMe(meSchema.parse(data));
       setStatus('authenticated');
     } catch {
       setMe(null);
