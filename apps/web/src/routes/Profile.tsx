@@ -2,7 +2,7 @@ import { type FormEvent, useId, useState } from 'react';
 import type { DoctorProfileInput, PatientProfileInput } from '@carelink/shared';
 import { BadgeCheckIcon, ClockIcon } from 'lucide-react';
 import { AppShell } from '../components/AppShell';
-import { Avatar } from '../components/Avatar';
+import { AvatarUpload } from '../components/AvatarUpload';
 import { MedicineRows, fromMedicineItem, toMedicineItems, type MedicineRow } from '../components/MedicineRows';
 import { Notice } from '../components/Notice';
 import { RoleBadge } from '../components/RoleBadge';
@@ -11,6 +11,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Field, FieldGroup, FieldLabel } from '../components/ui/field';
 import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -40,7 +41,7 @@ export default function Profile() {
     <AppShell>
       <h1 className="mb-4 text-xl font-semibold">{isDoctor ? 'Doctor profile' : 'Patient profile'}</h1>
 
-      <ProfileHeader me={me} />
+      <ProfileHeader me={me} onAvatarChanged={reload} />
 
       <Card className="mt-4">
         <CardContent>
@@ -59,7 +60,7 @@ export default function Profile() {
 
 /** Identity card at the top of the profile — who this account is and, for a
  *  doctor, whether they're verified. */
-function ProfileHeader({ me }: { me: Me }) {
+function ProfileHeader({ me, onAvatarChanged }: { me: Me; onAvatarChanged: () => Promise<void> }) {
   const isDoctor = me.user.role === 'DOCTOR';
   const verified = Boolean(me.doctorProfile?.verifiedAt);
   const d = me.doctorProfile;
@@ -67,7 +68,11 @@ function ProfileHeader({ me }: { me: Me }) {
   return (
     <Card>
       <CardContent className="flex flex-wrap items-center gap-4">
-        <Avatar name={me.user.fullName} src={me.user.avatarUrl} size="lg" />
+        <AvatarUpload
+          name={me.user.fullName}
+          src={me.user.avatarUrl}
+          onChanged={onAvatarChanged}
+        />
         <div className="grid gap-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-lg font-semibold">{me.user.fullName}</span>
@@ -213,6 +218,25 @@ function TextField({
   );
 }
 
+function TextAreaField({
+  label,
+  value,
+  onChange,
+  ...rest
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+} & Omit<React.ComponentProps<typeof Textarea>, 'value' | 'onChange'>) {
+  const id = useId();
+  return (
+    <Field>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <Textarea id={id} value={value} onChange={(e) => onChange(e.target.value)} {...rest} />
+    </Field>
+  );
+}
+
 function PatientForm({ me, onSaved }: { me: Me; onSaved: () => Promise<void> }) {
   const p = me.patientProfile;
   const genderId = useId();
@@ -308,6 +332,9 @@ function DoctorForm({ me, onSaved }: { me: Me; onSaved: () => Promise<void> }) {
     yearsExperience: d?.yearsExperience?.toString() ?? '0',
     consultationFeeInr: d?.consultationFeeInr?.toString() ?? '0',
     clinicName: d?.clinicName ?? '',
+    clinicAddress: d?.clinicAddress ?? '',
+    clinicMapUrl: d?.clinicMapUrl ?? '',
+    clinicPhone: d?.clinicPhone ?? '',
     bio: d?.bio ?? '',
   });
   const [meds, setMeds] = useState<MedicineRow[]>(
@@ -326,6 +353,9 @@ function DoctorForm({ me, onSaved }: { me: Me; onSaved: () => Promise<void> }) {
       yearsExperience: Number(f.yearsExperience) || 0,
       consultationFeeInr: Number(f.consultationFeeInr) || 0,
       clinicName: f.clinicName || undefined,
+      clinicAddress: f.clinicAddress || undefined,
+      clinicMapUrl: f.clinicMapUrl || undefined,
+      clinicPhone: f.clinicPhone || undefined,
       bio: f.bio || undefined,
       favoriteMedicines: toMedicineItems(meds),
     });
@@ -363,6 +393,26 @@ function DoctorForm({ me, onSaved }: { me: Me; onSaved: () => Promise<void> }) {
           onChange={set('consultationFeeInr')}
         />
         <TextField label="Clinic name" value={f.clinicName} onChange={set('clinicName')} />
+        <TextAreaField
+          label="Clinic address"
+          value={f.clinicAddress}
+          onChange={set('clinicAddress')}
+          rows={2}
+        />
+        <TextField
+          label="Map link"
+          type="url"
+          inputMode="url"
+          placeholder="https://maps.google.com/?q=…"
+          value={f.clinicMapUrl}
+          onChange={set('clinicMapUrl')}
+        />
+        <TextField
+          label="Clinic phone"
+          type="tel"
+          value={f.clinicPhone}
+          onChange={set('clinicPhone')}
+        />
         <TextField label="Short bio" value={f.bio} onChange={set('bio')} />
 
         <div className="grid gap-2">

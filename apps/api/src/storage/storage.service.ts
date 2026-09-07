@@ -21,11 +21,15 @@ function parseCloudinaryUrl(
 }
 
 /**
- * Thin wrapper over Cloudinary for private file storage (prescription PDFs now;
- * chat attachments + medical documents later). All uploads are `type:
- * 'authenticated'` / `resource_type: 'raw'` — never publicly reachable. The
- * browser never talks to Cloudinary directly; the API fetches bytes back with a
- * short-lived signed URL and streams them.
+ * Thin wrapper over Cloudinary.
+ *
+ * Private files (prescription PDFs now; chat attachments + medical documents
+ * later) are `type: 'authenticated'` / `resource_type: 'raw'` — never publicly
+ * reachable. The browser never talks to Cloudinary directly; the API fetches
+ * bytes back with a short-lived signed URL and streams them.
+ *
+ * Avatars are the exception: a plain `type: 'upload'` image, publicly delivered
+ * off `secure_url` (not PHI), normalised to a 256² webp.
  *
  * If Cloudinary is unconfigured (no CLOUDINARY_URL, and no CLOUDINARY_CLOUD_NAME
  * / _API_KEY / _API_SECRET trio for loadConfig to assemble one from), `configured`
@@ -65,6 +69,54 @@ export class StorageService implements OnModuleInit {
 
   private prescriptionPublicId(prescriptionId: string): string {
     return `${this.folder}/prescriptions/${prescriptionId}`;
+  }
+
+  private avatarPublicId(userId: string): string {
+    return `${this.folder}/avatars/${userId}`;
+  }
+
+  /**
+   * Uploads (or overwrites) a user's avatar, normalised to a 256×256 webp.
+   * Returns the public HTTPS delivery URL. One asset per user — re-upload
+   * replaces it in place.
+   */
+  async uploadAvatar(userId: string, image: Buffer): Promise<string> {
+    const publicId = this.avatarPublicId(userId);
+    const url = await new Promise<string>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          public_id: publicId,
+          resource_type: 'image',
+          type: 'upload',
+          overwrite: true,
+          invalidate: true,
+          transformation: [
+            { width: 256, height: 256, crop: 'fill', gravity: 'face' },
+            { fetch_format: 'webp', quality: 'auto' },
+          ],
+        },
+        (err, result) =>
+          err || !result?.secure_url
+            ? reject(err ?? new Error('avatar upload returned no URL'))
+            : resolve(result.secure_url),
+      );
+      stream.end(image);
+    });
+    return url;
+  }
+
+  /** Best-effort delete of a user's avatar asset. Never throws. */
+  async deleteAvatar(userId: string): Promise<void> {
+    if (!this.cfgConfigured) return;
+    try {
+      await cloudinary.uploader.destroy(this.avatarPublicId(userId), {
+        resource_type: 'image',
+        type: 'upload',
+        invalidate: true,
+      });
+    } catch (err) {
+      this.logger.warn(`deleteAvatar ${userId} failed: ${(err as Error).message}`);
+    }
   }
 
   /** Uploads (or overwrites) a prescription PDF. Returns the Cloudinary public_id. */

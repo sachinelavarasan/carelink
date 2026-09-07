@@ -43,6 +43,13 @@
       "when": 1788804484942,
       "tag": "0005_drop_auth_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788806526858,
+      "tag": "0006_clinic_details",
+      "breakpoints": true
     }
   ]
 }

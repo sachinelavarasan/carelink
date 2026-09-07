@@ -95,6 +95,9 @@ export const doctorProfileSchema = z.object({
   bio: z.string().max(2000).optional(),
   consultationFeeInr: z.number().int().nonnegative(),
   clinicName: z.string().max(200).optional(),
+  clinicAddress: z.string().max(500).optional(),
+  clinicMapUrl: z.string().url().max(2000).optional(),
+  clinicPhone: z.string().max(20).optional(),
   /** Reusable medicine lines the doctor can drop into a prescription. */
   favoriteMedicines: z.array(medicineItemSchema).max(50).default([]),
 });
@@ -155,6 +158,9 @@ export const doctorPublicSchema = z.object({
   bio: z.string().nullable(),
   consultationFeeInr: z.number().int(),
   clinicName: z.string().nullable(),
+  clinicAddress: z.string().nullable(),
+  clinicMapUrl: z.string().nullable(),
+  clinicPhone: z.string().nullable(),
 });
 export type DoctorPublic = z.infer<typeof doctorPublicSchema>;
 
@@ -482,6 +488,10 @@ export const doctorProfileOutSchema = doctorProfileSchema.extend({
   updatedAt: isoDate,
 });
 export type DoctorProfileOut = z.infer<typeof doctorProfileOutSchema>;
+
+/** Result of uploading or clearing the current user's avatar. */
+export const avatarResultSchema = z.object({ avatarUrl: z.string().url().nullable() });
+export type AvatarResult = z.infer<typeof avatarResultSchema>;
 
 export const meSchema = z.object({
   user: userSchema.extend({

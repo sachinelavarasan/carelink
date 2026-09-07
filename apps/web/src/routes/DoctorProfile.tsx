@@ -44,6 +44,42 @@ export default function DoctorProfile() {
               {doctorQ.data.clinicName ? ` · ${doctorQ.data.clinicName}` : ''}
             </p>
             {doctorQ.data.bio && <p className="mt-1 text-sm">{doctorQ.data.bio}</p>}
+
+            {(doctorQ.data.clinicAddress ||
+              doctorQ.data.clinicMapUrl ||
+              doctorQ.data.clinicPhone) && (
+              <div className="mt-2 grid gap-1 border-t pt-3 text-sm">
+                <span className="font-medium">
+                  {doctorQ.data.clinicName ?? 'Clinic'}
+                </span>
+                {doctorQ.data.clinicAddress && (
+                  <p className="whitespace-pre-line text-muted-foreground">
+                    {doctorQ.data.clinicAddress}
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-x-4">
+                  {doctorQ.data.clinicMapUrl && (
+                    <a
+                      className="text-primary underline-offset-2 hover:underline"
+                      href={doctorQ.data.clinicMapUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Get directions
+                    </a>
+                  )}
+                  {doctorQ.data.clinicPhone && (
+                    <a
+                      className="text-primary underline-offset-2 hover:underline"
+                      href={`tel:${doctorQ.data.clinicPhone.replace(/\s+/g, '')}`}
+                    >
+                      {doctorQ.data.clinicPhone}
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
             <Link
               className={`${buttonVariants()} mt-2 w-fit`}
               to={`/book?doctorId=${doctorQ.data.id}`}
