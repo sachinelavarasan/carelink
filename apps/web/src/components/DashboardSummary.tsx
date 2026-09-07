@@ -1,5 +1,14 @@
 import type { AppointmentStatus, AppointmentSummary } from '@carelink/shared';
 import { useQuery } from '@tanstack/react-query';
+import {
+  CalendarCheckIcon,
+  CalendarClockIcon,
+  CalendarDaysIcon,
+  type LucideIcon,
+  StethoscopeIcon,
+  TrendingUpIcon,
+  UsersRoundIcon,
+} from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { apiGet } from '../lib/api';
 import { useAuth } from '../lib/auth';
@@ -11,7 +20,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from './ui/chart';
-import { Spinner } from './Spinner';
+import { Skeleton } from './ui/skeleton';
 
 const chartConfig = {
   count: { label: 'Appointments', color: 'var(--primary)' },
@@ -25,9 +34,6 @@ const dayLabel = (iso: string) =>
     month: 'short',
   });
 
-// Chart-context colour per status. Five mutually distinct hues (no two reds), so
-// the segments are legible for colour-vision deficiency; identity is still
-// carried by the StatusBadge (icon + label) beside every row.
 const STATUS_COLOR: Record<AppointmentStatus, string> = {
   REQUESTED: 'var(--muted-foreground)',
   CONFIRMED: 'var(--primary)',
@@ -43,14 +49,43 @@ const STATUS_ORDER: AppointmentStatus[] = [
   'NO_SHOW',
 ];
 
-function Stat({ label, value }: { label: string; value: number }) {
+function Stat({
+  icon: Icon,
+  label,
+  value,
+  hint,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: number | string;
+  hint?: string;
+}) {
   return (
     <Card size="sm">
       <CardContent>
-        <div className="text-sm text-muted-foreground">{label}</div>
-        <div className="mt-1 text-2xl font-semibold">{value}</div>
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Icon aria-hidden className="size-4" />
+          {label}
+        </div>
+        <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
+        {hint && <div className="text-xs text-muted-foreground">{hint}</div>}
       </CardContent>
     </Card>
+  );
+}
+
+function StatRowSkeleton() {
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {Array.from({ length: 4 }, (_, i) => (
+        <Card key={i} size="sm">
+          <CardContent className="grid gap-2">
+            <Skeleton className="h-3.5 w-20" />
+            <Skeleton className="h-7 w-10" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
 }
 
@@ -100,24 +135,42 @@ export function DashboardSummary() {
 
   if (isLoading) {
     return (
-      <p className="mt-4 inline-flex items-center gap-2 text-sm text-muted-foreground">
-        <Spinner /> Loading summary…
-      </p>
+      <section className="mt-4">
+        <StatRowSkeleton />
+      </section>
     );
   }
   if (!data) return null;
 
+  const outcomes = data.byStatus.COMPLETED + data.byStatus.CANCELLED + data.byStatus.NO_SHOW;
+  const completionRate = outcomes > 0 ? Math.round((data.byStatus.COMPLETED / outcomes) * 100) : null;
+
   return (
-    <section className="mt-4">
-      <div className={isDoctor ? 'grid grid-cols-2 gap-3 sm:grid-cols-4' : 'grid grid-cols-3 gap-3'}>
-        <Stat label="Upcoming" value={data.upcoming} />
-        <Stat label="Next 7 days" value={data.next7Days} />
-        <Stat label="Completed" value={data.completed} />
-        {isDoctor && <Stat label="Patients seen" value={data.patientsSeen} />}
+    <section className="mt-4 grid gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat icon={CalendarDaysIcon} label="Today" value={data.today} />
+        {isDoctor ? (
+          <>
+            <Stat icon={CalendarClockIcon} label="Upcoming" value={data.upcoming} />
+            <Stat icon={CalendarCheckIcon} label="Completed" value={data.completed} />
+            <Stat icon={UsersRoundIcon} label="Patients" value={data.counterpartiesSeen} />
+          </>
+        ) : (
+          <>
+            <Stat
+              icon={CalendarClockIcon}
+              label="This week"
+              value={data.next7Days}
+              hint={`${data.upcoming} upcoming`}
+            />
+            <Stat icon={CalendarCheckIcon} label="Consultations" value={data.completed} />
+            <Stat icon={StethoscopeIcon} label="Doctors seen" value={data.counterpartiesSeen} />
+          </>
+        )}
       </div>
 
       {isDoctor && (
-        <div className="mt-3 grid gap-3">
+        <div className="grid gap-3 lg:grid-cols-[2fr_1fr]">
           <Card>
             <CardContent>
               <h3 className="mb-3 text-sm font-medium">Appointments — last 14 days</h3>
@@ -159,9 +212,21 @@ export function DashboardSummary() {
           </Card>
 
           <Card>
-            <CardContent>
-              <h3 className="mb-3 text-sm font-medium">Appointments by status</h3>
-              <StatusBreakdown byStatus={data.byStatus} />
+            <CardContent className="grid gap-3">
+              <div>
+                <h3 className="text-sm font-medium">Completion rate</h3>
+                <p className="mt-1 text-2xl font-semibold tabular-nums">
+                  {completionRate == null ? '—' : `${completionRate}%`}
+                  {completionRate != null && (
+                    <TrendingUpIcon aria-hidden className="ml-1 inline size-4 text-success-fg" />
+                  )}
+                </p>
+                <p className="text-xs text-muted-foreground">of finished consultations</p>
+              </div>
+              <div className="border-t border-border pt-3">
+                <h3 className="mb-2 text-sm font-medium">By status</h3>
+                <StatusBreakdown byStatus={data.byStatus} />
+              </div>
             </CardContent>
           </Card>
         </div>
