@@ -28,14 +28,14 @@ const envSchema = z.object({
   // Links in emails point here
   APP_WEB_URL: z.string().url().default('http://localhost:5173'),
 
-  // Web auth cookies. SECURE defaults to (NODE_ENV === production). Use
-  // SAMESITE=none only when the web app and API are on different sites (e.g.
-  // two *.vercel.app subdomains) — it then requires SECURE=true.
+  // Web auth cookies. SECURE defaults to (NODE_ENV === production). SAMESITE, if
+  // unset, follows SECURE: `none` for a secure (cross-site, e.g. two *.vercel.app
+  // subdomains) deployment, `lax` for local http dev. Set it explicitly to pin.
   COOKIE_SECURE: z
     .enum(['true', 'false'])
     .optional()
     .transform((v) => (v === undefined ? undefined : v === 'true')),
-  COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).default('lax'),
+  COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).optional(),
   COOKIE_DOMAIN: z.string().min(1).optional(),
 
   // File storage (Cloudinary) — holds prescription PDFs (M4) and, later, chat

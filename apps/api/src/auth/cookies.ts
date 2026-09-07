@@ -19,7 +19,12 @@ export class CookieService {
     const secure =
       this.config.get('COOKIE_SECURE', { infer: true }) ??
       this.config.get('NODE_ENV', { infer: true }) === 'production';
-    const sameSite = this.config.get('COOKIE_SAMESITE', { infer: true });
+    // A Secure cookie almost always means the web app and API sit on different
+    // sites (two *.vercel.app subdomains, a separate API host); the browser only
+    // keeps such a cookie from a cross-site XHR when it is SameSite=None. Fall
+    // back to Lax for local http dev, where None would be rejected.
+    const sameSite =
+      this.config.get('COOKIE_SAMESITE', { infer: true }) ?? (secure ? 'none' : 'lax');
     const domain = this.config.get('COOKIE_DOMAIN', { infer: true });
     const refreshMaxAge = durationToMs(this.config.get('JWT_REFRESH_TTL', { infer: true }));
 
