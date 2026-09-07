@@ -4,6 +4,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
+import { BackLink } from '../components/BackLink';
 import { Notice } from '../components/Notice';
 import { Spinner } from '../components/Spinner';
 import { api, apiGet, errMessage } from '../lib/api';
@@ -68,11 +69,7 @@ export default function VideoCall() {
     endM.mutate(undefined, { onSettled: () => navigate('/appointments') });
   }, [endM, navigate]);
 
-  const back = (
-    <Link className="text-sm text-primary underline underline-offset-4" to="/appointments">
-      ← Appointments
-    </Link>
-  );
+  const back = <BackLink to="/appointments">Appointments</BackLink>;
 
   if (sessionQ.isLoading) {
     return (

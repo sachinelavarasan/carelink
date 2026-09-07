@@ -17,7 +17,12 @@ if (import.meta.env.VITE_SENTRY_DSN) {
   });
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    // Don't re-hit the API just because the tab regained focus.
+    queries: { refetchOnWindowFocus: false },
+  },
+});
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

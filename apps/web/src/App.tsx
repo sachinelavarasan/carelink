@@ -1,5 +1,5 @@
-import { lazy } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { lazy, useEffect } from 'react';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Appointments from './routes/Appointments';
 import Availability from './routes/Availability';
@@ -24,9 +24,21 @@ const ChartPreview = lazy(() => import('./routes/__ChartPreview'));
 
 const protect = (el: React.ReactNode) => <ProtectedRoute>{el}</ProtectedRoute>;
 
+/** Every navigation lands at the top of the page, so the header is in view
+ *  after a back/forward move, not wherever the previous screen was scrolled. */
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 export default function App() {
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       <Route path="/__chart" element={<ChartPreview />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -55,5 +67,6 @@ export default function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }
