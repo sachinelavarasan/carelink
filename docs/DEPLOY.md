@@ -34,6 +34,14 @@ openssl rand -hex 32       # CRON_SECRET
 
 Root directory `apps/api`. `vercel.json` is already committed.
 
+> The live deployment currently runs the API on **Render** and the web app on
+> **Vercel**, with the web app's `/api/*` rewrite proxying to Render so the
+> browser only ever sees one origin — see [`DEPLOY-RENDER.md`](./DEPLOY-RENDER.md).
+> In that setup leave `VITE_API_URL` empty and keep `COOKIE_SAMESITE=lax`. The
+> two-Vercel-projects layout below is only same-site if both projects sit on one
+> registrable domain (`api.` / `app.carelink.in`) **and** `COOKIE_DOMAIN` is set
+> to `.carelink.in`; otherwise the cookies are third-party and get blocked.
+
 ### Required
 
 | Var | Value |
@@ -46,7 +54,8 @@ Root directory `apps/api`. `vercel.json` is already committed.
 | `APP_WEB_URL` | `https://app.carelink.in` — used in email links |
 | `CORS_ORIGINS` | `https://app.carelink.in` (comma‑separate if more) |
 | `COOKIE_SECURE` | `true` |
-| `COOKIE_SAMESITE` | `lax` if web+API share a registrable domain (`*.carelink.in`); `none` if they don’t |
+| `COOKIE_SAMESITE` | `lax` — keep the browser on one origin (proxy the API, or share a registrable domain) rather than relying on `none` |
+| `COOKIE_DOMAIN` | `.carelink.in` **only** if web + API are on sub-domains of it; unset otherwise |
 | `CRON_SECRET` | 32‑hex random (same value goes in GitHub secrets) |
 
 ### Email (leave blank → links print to the function log instead of sending)
@@ -81,7 +90,7 @@ build can reach the repo root.
 
 | Var | Value |
 |---|---|
-| `VITE_API_URL` | `https://api.carelink.in` (no trailing slash) |
+| `VITE_API_URL` | `https://api.carelink.in` (no trailing slash) — or **empty** if the API is reached through this project's `/api/*` rewrite |
 | `VITE_SENTRY_DSN` | *(optional)* React DSN |
 | `VITE_SENTRY_TRACES_SAMPLE_RATE` | `0` |
 

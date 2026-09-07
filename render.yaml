@@ -68,11 +68,16 @@ services:
       - key: CORS_ORIGINS
         sync: false
 
-      # Web app and API are on different sites → cross-site cookies.
+      # The web app reaches the API only through its own origin (the Vercel
+      # `/api/*` rewrite in apps/web/vercel.json proxies to this service), so
+      # from the browser it's SAME-ORIGIN. Cookies must therefore be first-party
+      # `SameSite=Lax` — `None` makes them third-party and current browsers
+      # block third-party cookies by default, so the session vanishes on reload.
+      # Never point the web app straight at *.onrender.com (that's cross-site).
       - key: COOKIE_SECURE
         value: "true"
       - key: COOKIE_SAMESITE
-        value: none
+        value: lax
 
       # Shared secret for POST /api/v1/jobs/run (the cron dispatcher).
       - key: CRON_SECRET

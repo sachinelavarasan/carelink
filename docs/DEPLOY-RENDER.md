@@ -48,13 +48,20 @@ Set in the Render dashboard (Environment tab). Full reference:
 | `APP_WEB_URL` | the deployed web app URL (used in email links) |
 | `CORS_ORIGINS` | the deployed web app origin(s), comma-separated |
 | `COOKIE_SECURE` | `true` |
-| `COOKIE_SAMESITE` | `none` — web app and API are on different sites |
+| `COOKIE_SAMESITE` | `lax` — the browser only ever talks to the web origin (see below) |
 | `CRON_SECRET` | random 16+ chars (guards `POST /jobs/run`) |
 
-`COOKIE_DOMAIN` stays unset — the web and API live on different registrable
-domains (`*.vercel.app` vs `*.onrender.com`), so a shared cookie domain isn't
-possible; the browser keeps the API's cookies against the API host and sends
-them cross-site because of `SameSite=None; Secure`.
+`COOKIE_DOMAIN` stays unset.
+
+**The web app must reach this API only through its own origin.** The Vercel
+`/api/*` rewrite in [`apps/web/vercel.json`](../apps/web/vercel.json) proxies
+requests to this Render service server-side, so from the browser every request
+is same-origin with the web app and the auth cookies are first-party. Do **not**
+set `VITE_API_URL` to `https://carelink-api.onrender.com` on the web project —
+that makes the browser hit the API host directly, the cookies become
+third-party, and current browsers block third-party cookies by default, so the
+session is dropped on the next page load. `SameSite=None` does not save you
+here; keep it `lax`.
 
 **Optional** — `SMTP_*` + `MAIL_FROM` (unset ⇒ links log to stdout),
 `CLOUDINARY_URL`, `SENTRY_DSN`, `JITSI_DOMAIN`.
@@ -96,5 +103,7 @@ reminders and pings the DB. Run it every 5 min:
   ~30–60s while it wakes. The GitHub Actions cron above doubles as a keep-warm.
 - Build output is `apps/api/dist/src/main.js` (the tsconfig compiles both `src/`
   and `api/`, so `dist/` gets a `src/` subdir).
-- Point `apps/web` at `https://carelink-api.onrender.com` and add that origin to
-  `CORS_ORIGINS`.
+- Leave `VITE_API_URL` **empty** on the web project so the SPA calls its own
+  `/api/*` and the Vercel rewrite forwards to this service. `CORS_ORIGINS` only
+  needs the web origin (the proxy hop is server-to-server, but a direct hit to
+  the API host during debugging still needs it).
