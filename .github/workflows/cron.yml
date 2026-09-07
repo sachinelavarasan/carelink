@@ -1,0 +1,19 @@
+# name: Scheduled jobs
+
+# # Runs the reminder dispatcher + Supabase keep-alive (see docs/PLAN.md §10).
+# on:
+#   schedule:
+#     - cron: '*/5 * * * *'
+#   workflow_dispatch:
+
+# jobs:
+#   run-jobs:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Trigger job runner
+#         run: |
+#           code=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+#             -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+#             "${{ vars.API_BASE_URL }}/api/v1/jobs/run")
+#           echo "job runner responded $code"
+#           test "$code" = "200"

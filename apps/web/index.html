@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta id="theme-color-meta" name="theme-color" content="#fafafa" />
+    <title>CareLink</title>
+    <script>
+      // No-flash: a returning dark-mode user gets `.dark` before first paint.
+      // Default is light, so a first-time visitor needs nothing here.
+      (function () {
+        try {
+          if (localStorage.getItem('carelink.theme') === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+          }
+        } catch (e) {
+          /* private mode / storage disabled — fall through to light */
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

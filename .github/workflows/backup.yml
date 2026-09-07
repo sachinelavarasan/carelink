@@ -1,0 +1,59 @@
+name: Nightly DB backup
+
+# pg_dump of the Supabase database, uploaded to Cloudflare R2 (see docs/PLAN.md §13).
+# Requires repo secrets:
+#   DIRECT_URL                – Supabase direct (port 5432) connection string
+#   R2_ENDPOINT               – https://<accountid>.r2.cloudflarestorage.com
+#   R2_BUCKET                 – bucket name (e.g. carelink-backups)
+#   AWS_ACCESS_KEY_ID         – R2 access key id
+#   AWS_SECRET_ACCESS_KEY     – R2 secret access key
+# Restore test is manual: monthly, pull the latest dump and `pg_restore` into a scratch DB.
+
+on:
+  schedule:
+    - cron: '17 19 * * *' # 00:47 IST daily
+  workflow_dispatch:
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install postgresql-client 16
+        run: |
+          sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
+          sudo apt-get update && sudo apt-get install -y postgresql-client-16
+
+      - name: Dump and upload
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          set -euo pipefail
+          stamp=$(date -u +%Y-%m-%dT%H-%M-%SZ)
+          file="carelink-${stamp}.dump"
+          pg_dump --format=custom --no-owner --no-privileges "$DIRECT_URL" > "$file"
+          gzip "$file"
+          aws s3 cp "${file}.gz" "s3://${R2_BUCKET}/${file}.gz" --endpoint-url "$R2_ENDPOINT"
+          echo "uploaded ${file}.gz ($(du -h "${file}.gz" | cut -f1))"
+
+      - name: Prune backups older than 30 days
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          set -euo pipefail
+          cutoff=$(date -u -d '30 days ago' +%s)
+          aws s3 ls "s3://${R2_BUCKET}/" --endpoint-url "$R2_ENDPOINT" | while read -r date time size key; do
+            [ -z "${key:-}" ] && continue
+            ts=$(date -u -d "$date $time" +%s || echo 0)
+            if [ "$ts" -lt "$cutoff" ]; then
+              echo "pruning $key"
+              aws s3 rm "s3://${R2_BUCKET}/${key}" --endpoint-url "$R2_ENDPOINT"
+            fi
+          done

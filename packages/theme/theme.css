@@ -1,0 +1,76 @@
+/**
+ * CareLink theme tokens — the single source of truth for both apps.
+ * shadcn/ui variable vocabulary, CareLink teal + cool-neutral palette.
+ * Mirrored (curated subset) as hex maps in ./src/tokens.ts; parity is asserted
+ * by tokens.spec.ts.
+ *
+ * Web  (Tailwind v4 + shadcn): imported by apps/web/src/index.css, exposed to
+ *      utilities via an `@theme inline` block there. `.dark` toggled on <html>.
+ * Mobile (Tailwind 3.4 + NativeWind): imported by apps/mobile/global.css and
+ *      mapped to utilities by ./preset.cjs. `.dark` follows NativeWind colorScheme.
+ */
+:root {
+  --background: #fafafa;
+  --foreground: #18181b;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+  --primary: #0f766e;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #52525b;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #b91c1c;
+  --destructive-foreground: #ffffff;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #0f766e;
+  --radius: 0.625rem;
+
+  /* Semantic status trios — used by StatusBadge and appointment/drug states. */
+  --success-bg: #f0fdf4;
+  --success-fg: #15803d;
+  --success-border: #bbf7d0;
+  --warning-bg: #fffbeb;
+  --warning-fg: #b45309;
+  --warning-border: #fde68a;
+  --danger-bg: #fef2f2;
+  --danger-fg: #b91c1c;
+  --danger-border: #fecaca;
+}
+
+.dark {
+  --background: #0b0b0d;
+  --foreground: #f4f4f5;
+  --card: #17171a;
+  --card-foreground: #f4f4f5;
+  --popover: #17171a;
+  --popover-foreground: #f4f4f5;
+  --primary: #2dd4bf;
+  --primary-foreground: #04211f;
+  --secondary: #27272a;
+  --secondary-foreground: #f4f4f5;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --accent: #27272a;
+  --accent-foreground: #f4f4f5;
+  --destructive: #f87171;
+  --destructive-foreground: #2a1215;
+  --border: #3f3f46;
+  --input: #3f3f46;
+  --ring: #5eead4;
+
+  --success-bg: #0f2a1a;
+  --success-fg: #4ade80;
+  --success-border: #166534;
+  --warning-bg: #2a1e0a;
+  --warning-fg: #fbbf24;
+  --warning-border: #92400e;
+  --danger-bg: #2a1215;
+  --danger-fg: #f87171;
+  --danger-border: #991b1b;
+}
