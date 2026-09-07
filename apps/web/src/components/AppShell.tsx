@@ -3,6 +3,8 @@ import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '../lib/auth';
 import { ThemeToggle } from '../theme/ThemeToggle';
+import { Avatar } from './Avatar';
+import { RoleBadge } from './RoleBadge';
 import { Button } from './ui/button';
 
 const navLink = ({ isActive }: { isActive: boolean }) =>
@@ -46,10 +48,31 @@ export function AppShell({ children }: { children: ReactNode }) {
               Availability
             </NavLink>
           )}
-          <NavLink to="/profile" className={navLink}>
-            Profile
-          </NavLink>
         </nav>
+
+        {me && (
+          <NavLink
+            to="/profile"
+            title="Your profile"
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-2 rounded-full border py-1 pr-2.5 pl-1 transition-colors',
+                isActive
+                  ? 'border-primary/40 bg-primary/5'
+                  : 'border-border hover:bg-muted',
+              )
+            }
+          >
+            <Avatar name={me.user.fullName} src={me.user.avatarUrl} size="sm" />
+            <span className="hidden items-center gap-2 sm:flex">
+              <span className="max-w-[14ch] truncate text-sm font-medium">
+                {me.user.fullName}
+              </span>
+              <RoleBadge role={me.user.role} />
+            </span>
+          </NavLink>
+        )}
+
         <ThemeToggle />
         <Button variant="outline" size="sm" onClick={() => void logout()}>
           Sign out
