@@ -17,7 +17,7 @@ import type {
 import { AvailabilityService } from '../availability/availability.service';
 import { DB } from '../db/db.module';
 import type { Database } from '../db';
-import { appointments, chatThreads, users } from '../db/schema';
+import { appointments, chatThreads, prescriptions, users } from '../db/schema';
 import { NotificationsService } from '../notifications/notifications.service';
 import type { AuthUser } from '../common/current-user.decorator';
 
@@ -195,21 +195,36 @@ export class AppointmentsService {
     return toAppointment(updated);
   }
 
-  /** Home-page summary: 3 counts, a 14-day daily series, and a lifetime status
-   *  breakdown + distinct-patients count for the doctor dashboard. */
+  /** Dashboard summary: headline counts, a 14-day daily series, a lifetime
+   *  status breakdown, and role-specific figures (patients seen / follow-ups
+   *  due / draft records). Two queries, both keyed on the current user. */
   async summary(user: AuthUser): Promise<AppointmentSummary> {
-    const rows = await this.db
-      .select({
-        status: appointments.status,
-        start: appointments.scheduledStart,
-        end: appointments.scheduledEnd,
-        patientId: appointments.patientId,
-      })
-      .from(appointments)
-      .where(or(eq(appointments.patientId, user.id), eq(appointments.doctorId, user.id)));
+    const [rows, rxRows] = await Promise.all([
+      this.db
+        .select({
+          status: appointments.status,
+          start: appointments.scheduledStart,
+          end: appointments.scheduledEnd,
+          patientId: appointments.patientId,
+          doctorId: appointments.doctorId,
+        })
+        .from(appointments)
+        .where(or(eq(appointments.patientId, user.id), eq(appointments.doctorId, user.id))),
+      this.db
+        .select({
+          followUpDate: prescriptions.followUpDate,
+          finalizedAt: prescriptions.finalizedAt,
+          patientId: prescriptions.patientId,
+          doctorId: prescriptions.doctorId,
+        })
+        .from(prescriptions)
+        .where(or(eq(prescriptions.patientId, user.id), eq(prescriptions.doctorId, user.id))),
+    ]);
 
     const now = Date.now();
     const in7 = now + 7 * 86_400_000;
+    const todayKey = clinicDate(new Date());
+    let today = 0;
     let upcoming = 0;
     let next7Days = 0;
     let completed = 0;
@@ -221,9 +236,15 @@ export class AppointmentsService {
       NO_SHOW: 0,
     };
     const seen = new Set<string>();
+    const counterparties = new Set<string>();
 
     for (const r of rows) {
       byStatus[r.status] += 1;
+      if (r.status === 'CANCELLED') continue;
+
+      counterparties.add(r.patientId === user.id ? r.doctorId : r.patientId);
+      if (clinicDate(r.start) === todayKey) today += 1;
+
       if (r.status === 'COMPLETED') {
         completed += 1;
         seen.add(r.patientId);
@@ -236,21 +257,40 @@ export class AppointmentsService {
 
     // 14 ordered buckets ending today, keyed by clinic-local date.
     const daily = new Map<string, number>();
-    const today = clinicDate(new Date());
-    for (let i = 13; i >= 0; i -= 1) daily.set(shiftDate(today, -i), 0);
+    for (let i = 13; i >= 0; i -= 1) daily.set(shiftDate(todayKey, -i), 0);
     for (const r of rows) {
       if (r.status === 'CANCELLED') continue;
       const key = clinicDate(r.start);
       if (daily.has(key)) daily.set(key, (daily.get(key) ?? 0) + 1);
     }
 
+    const followUpWindowEnd = shiftDate(todayKey, 14);
+    let followUpsDue = 0;
+    let pendingRecords = 0;
+    for (const p of rxRows) {
+      if (
+        p.patientId === user.id &&
+        p.finalizedAt &&
+        p.followUpDate &&
+        p.followUpDate >= todayKey &&
+        p.followUpDate <= followUpWindowEnd
+      ) {
+        followUpsDue += 1;
+      }
+      if (p.doctorId === user.id && !p.finalizedAt) pendingRecords += 1;
+    }
+
     return {
+      today,
       upcoming,
       next7Days,
       completed,
       daily: [...daily].map(([date, count]) => ({ date, count })),
       byStatus,
       patientsSeen: seen.size,
+      counterpartiesSeen: counterparties.size,
+      followUpsDue,
+      pendingRecords,
     };
   }
 
