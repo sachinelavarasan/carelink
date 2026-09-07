@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "npm run build",
-  "installCommand": "npm install",
+  "buildCommand": "cd ../.. && npm run build --workspace @carelink/shared && npm run build --workspace @carelink/api",
+  "installCommand": "cd ../.. && npm install",
   "functions": {
     "api/index.ts": {
       "memory": 512,
