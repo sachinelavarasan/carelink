@@ -4,7 +4,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import Appointments from './routes/Appointments';
 import Availability from './routes/Availability';
 import Book from './routes/Book';
-import Consult from './routes/Consult';
+// import Consult from './routes/Consult'; // chat consultation hidden for now
 import Dashboard from './routes/Dashboard';
 import DoctorProfile from './routes/DoctorProfile';
 import Doctors from './routes/Doctors';
@@ -34,7 +34,7 @@ export default function App() {
 
       <Route path="/" element={protect(<Dashboard />)} />
       <Route path="/appointments" element={protect(<Appointments />)} />
-      <Route path="/consult/:appointmentId" element={protect(<Consult />)} />
+      {/* Chat consultation hidden for now — <Route path="/consult/:appointmentId" element={protect(<Consult />)} /> */}
       <Route path="/consult/:appointmentId/video" element={protect(<VideoCall />)} />
       <Route
         path="/appointments/:appointmentId/prescription"

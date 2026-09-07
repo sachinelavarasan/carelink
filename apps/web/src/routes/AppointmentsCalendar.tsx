@@ -93,12 +93,21 @@ export default function AppointmentsCalendar({
             </p>
             <div className="mt-1 flex items-center gap-4 text-sm">
               {selected.status === 'CONFIRMED' && selected.chatThreadId && (
-                <Link
-                  className="text-primary underline underline-offset-4"
-                  to={`/consult/${selected.id}`}
-                >
-                  Open consultation
-                </Link>
+                <>
+                  {/* Chat consultation hidden for now */}
+                  <Link
+                    className="text-primary underline underline-offset-4"
+                    to={`/consult/${selected.id}/video`}
+                  >
+                    Video call
+                  </Link>
+                  <Link
+                    className="text-primary underline underline-offset-4"
+                    to={`/appointments/${selected.id}/prescription`}
+                  >
+                    Prescription
+                  </Link>
+                </>
               )}
               {selected.status === 'CONFIRMED' && role === 'PATIENT' && (
                 <Link

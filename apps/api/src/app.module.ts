@@ -8,7 +8,7 @@ import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { CsrfGuard } from './auth/csrf.guard';
 import { AvailabilityModule } from './availability/availability.module';
-import { ChatModule } from './chat/chat.module';
+// import { ChatModule } from './chat/chat.module'; // hidden for now
 import { loadConfig } from './config';
 import { DbModule } from './db/db.module';
 import { HealthModule } from './health/health.module';
@@ -38,7 +38,7 @@ import { VideoModule } from './video/video.module';
     UsersModule,
     AvailabilityModule,
     AppointmentsModule,
-    ChatModule,
+    // ChatModule, // hidden for now
     VideoModule,
     PrescriptionsModule,
     JobsModule,

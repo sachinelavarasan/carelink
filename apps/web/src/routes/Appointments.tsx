@@ -145,12 +145,21 @@ function ListView({
               {scope === 'upcoming' && a.status === 'CONFIRMED' && (
                 <div className="mt-1 flex items-center gap-4 text-sm">
                   {a.chatThreadId && (
-                    <Link
-                      className="text-primary underline underline-offset-4"
-                      to={`/consult/${a.id}`}
-                    >
-                      Open consultation
-                    </Link>
+                    <>
+                      {/* Chat consultation hidden for now */}
+                      <Link
+                        className="text-primary underline underline-offset-4"
+                        to={`/consult/${a.id}/video`}
+                      >
+                        Video call
+                      </Link>
+                      <Link
+                        className="text-primary underline underline-offset-4"
+                        to={`/appointments/${a.id}/prescription`}
+                      >
+                        Prescription
+                      </Link>
+                    </>
                   )}
                   {role === 'PATIENT' && (
                     <Link

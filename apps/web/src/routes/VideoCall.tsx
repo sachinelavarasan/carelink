@@ -65,12 +65,12 @@ export default function VideoCall() {
   });
 
   const leave = useCallback(() => {
-    endM.mutate(undefined, { onSettled: () => navigate(`/consult/${appointmentId}`) });
-  }, [appointmentId, endM, navigate]);
+    endM.mutate(undefined, { onSettled: () => navigate('/appointments') });
+  }, [endM, navigate]);
 
   const back = (
-    <Link className="text-sm text-primary underline underline-offset-4" to={`/consult/${appointmentId}`}>
-      ← Consultation
+    <Link className="text-sm text-primary underline underline-offset-4" to="/appointments">
+      ← Appointments
     </Link>
   );
 
@@ -133,9 +133,12 @@ export default function VideoCall() {
         />
       </div>
       <p className="mt-2 text-sm text-muted-foreground">
-        Text chat and the prescription stay available on the{' '}
-        <Link className="text-primary underline underline-offset-4" to={`/consult/${appointmentId}`}>
-          consultation page
+        The prescription stays available on the{' '}
+        <Link
+          className="text-primary underline underline-offset-4"
+          to={`/appointments/${appointmentId}/prescription`}
+        >
+          prescription page
         </Link>
         .
       </p>

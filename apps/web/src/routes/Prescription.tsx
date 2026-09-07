@@ -88,7 +88,7 @@ export default function Prescription() {
             void qc.invalidateQueries({ queryKey: ['prescription', appointmentId] });
             void qc.invalidateQueries({ queryKey: ['appointments'] });
           }}
-          onIssued={() => navigate(`/consult/${appointmentId}`)}
+          onIssued={() => navigate('/appointments')}
         />
       ) : existing && existing.status === 'FINALIZED' ? (
         <PrescriptionReadOnly rx={existing} />
@@ -103,13 +103,10 @@ export default function Prescription() {
   );
 }
 
-function BackLink({ appointmentId }: { appointmentId: string }) {
+function BackLink({ appointmentId: _appointmentId }: { appointmentId: string }) {
   return (
-    <Link
-      className="text-sm text-primary underline underline-offset-4"
-      to={`/consult/${appointmentId}`}
-    >
-      ← Consultation
+    <Link className="text-sm text-primary underline underline-offset-4" to="/appointments">
+      ← Appointments
     </Link>
   );
 }
