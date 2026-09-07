@@ -71,7 +71,13 @@ Not needed at runtime — only for running migrations (locally or in the backup 
 
 ## 3. Web — Vercel project `carelink-web`
 
-Root directory `apps/web`, framework **Vite**, build `npm run build`, output `dist`.
+Root directory `apps/web`. [`apps/web/vercel.json`](../apps/web/vercel.json) is
+already committed — it sets the framework (**Vite**), builds `@carelink/shared`
+before the web app (Vercel's per-directory `npm run build` won't do the workspace
+ordering that `turbo` does locally), and rewrites every unknown path to
+`/index.html` for the client-side router. Leave "Include source files outside of
+the Root Directory" enabled (Vercel turns it on for detected monorepos) so the
+build can reach the repo root.
 
 | Var | Value |
 |---|---|
