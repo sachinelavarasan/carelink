@@ -25,7 +25,7 @@ export class CookieService {
     // explicitly, and accept that browsers block such third-party cookies by
     // default (the session then drops on the next page load).
     const sameSite = this.config.get('COOKIE_SAMESITE', { infer: true }) ?? 'lax';
-    const domain = this.config.get('COOKIE_DOMAIN', { infer: true });
+    const domain = this.config.get('COOKIE_DOMAIN', { infer: true }) ?? '';
     const maxAge = tokens.expiresIn * 1000;
 
     const base = { secure, sameSite, domain, path: '/', maxAge } as const;
