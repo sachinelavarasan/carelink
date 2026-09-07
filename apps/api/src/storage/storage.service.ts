@@ -10,8 +10,9 @@ import type { AppConfig } from '../config';
  * browser never talks to Cloudinary directly; the API fetches bytes back with a
  * short-lived signed URL and streams them.
  *
- * If CLOUDINARY_URL is unset, `configured` is false and callers fall back to
- * rendering on demand (nothing is persisted).
+ * If Cloudinary is unconfigured (no CLOUDINARY_URL, and no CLOUDINARY_CLOUD_NAME
+ * / _API_KEY / _API_SECRET trio for loadConfig to assemble one from), `configured`
+ * is false and callers fall back to rendering on demand (nothing is persisted).
  */
 @Injectable()
 export class StorageService implements OnModuleInit {
@@ -27,7 +28,9 @@ export class StorageService implements OnModuleInit {
     this.ttl = this.config.get('FILE_URL_TTL_SECONDS', { infer: true });
     this.cfgConfigured = Boolean(this.config.get('CLOUDINARY_URL', { infer: true }));
     if (!this.cfgConfigured) {
-      this.logger.warn('CLOUDINARY_URL not set — prescription PDFs will be rendered on demand, not stored.');
+      this.logger.warn(
+        'Cloudinary not configured (set CLOUDINARY_URL, or CLOUDINARY_CLOUD_NAME/_API_KEY/_API_SECRET) — prescription PDFs will be rendered on demand, not stored.',
+      );
       return;
     }
     // The SDK reads CLOUDINARY_URL from the environment; force HTTPS delivery.

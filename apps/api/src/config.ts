@@ -51,10 +51,16 @@ const envSchema = z.object({
   // attachments + medical documents. Optional: if unset, prescriptions still
   // finalise and the PDF is rendered on demand by GET /prescriptions/:id/pdf;
   // it just isn't persisted anywhere.
+  // Either set CLOUDINARY_URL directly, or supply the three discrete parts below
+  // (CLOUDINARY_CLOUD_NAME / _API_KEY / _API_SECRET) and loadConfig() assembles
+  // CLOUDINARY_URL from them — same pattern as DATABASE_URL from the DB_* parts.
   CLOUDINARY_URL: z
     .string()
     .regex(/^cloudinary:\/\/.+/, 'expected cloudinary://<api_key>:<api_secret>@<cloud_name>')
     .optional(),
+  CLOUDINARY_CLOUD_NAME: z.string().min(1).optional(),
+  CLOUDINARY_API_KEY: z.string().min(1).optional(),
+  CLOUDINARY_API_SECRET: z.string().min(1).optional(),
   CLOUDINARY_FOLDER: z.string().min(1).default('carelink'),
   // Signed-URL lifetime for private files, seconds.
   FILE_URL_TTL_SECONDS: z.coerce.number().int().positive().default(300),
@@ -96,6 +102,20 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     process.env.DIRECT_URL ??= url;
   }
 
+  // Assemble CLOUDINARY_URL from its discrete parts when not set directly. The
+  // Cloudinary SDK reads CLOUDINARY_URL straight off process.env, so mirror it there.
+  const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } = cleaned;
+  if (
+    !cleaned.CLOUDINARY_URL &&
+    CLOUDINARY_CLOUD_NAME &&
+    CLOUDINARY_API_KEY &&
+    CLOUDINARY_API_SECRET
+  ) {
+    const url = `cloudinary://${CLOUDINARY_API_KEY}:${CLOUDINARY_API_SECRET}@${CLOUDINARY_CLOUD_NAME}`;
+    cleaned.CLOUDINARY_URL = url;
+    process.env.CLOUDINARY_URL ??= url;
+  }
+
   const parsed = envSchema.safeParse(cleaned);
   if (!parsed.success) {
     const issues = parsed.error.issues.map((i) => `  - ${i.path.join('.')}: ${i.message}`);
@@ -109,7 +129,11 @@ export function smtpConfigured(cfg: AppConfig): boolean {
   return Boolean(cfg.SMTP_HOST && cfg.SMTP_USER && cfg.SMTP_PASS);
 }
 
-/** True when Cloudinary is configured; StorageService persists files only then. */
+/**
+ * True when Cloudinary is configured; StorageService persists files only then.
+ * CLOUDINARY_URL is assembled from the discrete parts in loadConfig(), so this
+ * one check covers both ways of supplying credentials.
+ */
 export function storageConfigured(cfg: AppConfig): boolean {
   return Boolean(cfg.CLOUDINARY_URL);
 }
