@@ -45,10 +45,10 @@ const envSchema = z.object({
   COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).optional(),
   COOKIE_DOMAIN: z.string().min(1).optional(),
 
-  // File storage (Cloudinary) — holds prescription PDFs (M4) and, later, chat
-  // attachments + medical documents. Optional: if unset, prescriptions still
-  // finalise and the PDF is rendered on demand by GET /prescriptions/:id/pdf;
-  // it just isn't persisted anywhere.
+  // File storage (Cloudinary) — holds prescription PDFs (M4), user avatars, and,
+  // later, chat attachments + medical documents. Optional: if unset, prescriptions
+  // still finalise and the PDF is rendered on demand by GET /prescriptions/:id/pdf
+  // (it just isn't persisted), and PUT /me/avatar returns 501.
   // Either set CLOUDINARY_URL directly, or supply the three discrete parts below
   // (CLOUDINARY_CLOUD_NAME / _API_KEY / _API_SECRET) and loadConfig() assembles
   // CLOUDINARY_URL from them — same pattern as DATABASE_URL from the DB_* parts.

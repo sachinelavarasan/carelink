@@ -44,6 +44,9 @@ export class AvailabilityService {
         bio: doctorProfiles.bio,
         consultationFeeInr: doctorProfiles.consultationFeeInr,
         clinicName: doctorProfiles.clinicName,
+        clinicAddress: doctorProfiles.clinicAddress,
+        clinicMapUrl: doctorProfiles.clinicMapUrl,
+        clinicPhone: doctorProfiles.clinicPhone,
         verifiedAt: doctorProfiles.verifiedAt,
       })
       .from(doctorProfiles)

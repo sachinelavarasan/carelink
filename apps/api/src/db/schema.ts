@@ -83,6 +83,9 @@ export const doctorProfiles = pgTable(
     bio: text('bio'),
     consultationFeeInr: integer('consultation_fee_inr').notNull().default(0),
     clinicName: text('clinic_name'),
+    clinicAddress: text('clinic_address'),
+    clinicMapUrl: text('clinic_map_url'), // Google/Apple Maps link, shown to patients as "Get directions"
+    clinicPhone: text('clinic_phone'),
     favoriteMedicines: jsonb('favorite_medicines')
       .notNull()
       .default([])
