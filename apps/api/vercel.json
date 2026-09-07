@@ -3,6 +3,7 @@
   "framework": null,
   "buildCommand": "cd ../.. && npm run build --workspace @carelink/shared && npm run build --workspace @carelink/api",
   "installCommand": "cd ../.. && npm install --include=dev",
+  "outputDirectory": "public",
   "functions": {
     "api/index.ts": {
       "memory": 512,
