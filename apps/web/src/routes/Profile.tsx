@@ -1,7 +1,11 @@
 import { type FormEvent, useId, useState } from 'react';
 import type { DoctorProfileInput, PatientProfileInput } from '@carelink/shared';
+import { BadgeCheckIcon, ClockIcon } from 'lucide-react';
 import { AppShell } from '../components/AppShell';
+import { Avatar } from '../components/Avatar';
 import { Notice } from '../components/Notice';
+import { RoleBadge } from '../components/RoleBadge';
+import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Field, FieldGroup, FieldLabel } from '../components/ui/field';
@@ -29,13 +33,17 @@ type Me = NonNullable<ReturnType<typeof useAuth>['me']>;
 export default function Profile() {
   const { me, reload } = useAuth();
   if (!me) return null;
+  const isDoctor = me.user.role === 'DOCTOR';
 
   return (
     <AppShell>
-      <h1 className="mb-4 text-xl font-semibold">Your profile</h1>
-      <Card>
+      <h1 className="mb-4 text-xl font-semibold">{isDoctor ? 'Doctor profile' : 'Patient profile'}</h1>
+
+      <ProfileHeader me={me} />
+
+      <Card className="mt-4">
         <CardContent>
-          {me.user.role === 'DOCTOR' ? (
+          {isDoctor ? (
             <DoctorForm me={me} onSaved={reload} />
           ) : (
             <PatientForm me={me} onSaved={reload} />
@@ -43,8 +51,53 @@ export default function Profile() {
         </CardContent>
       </Card>
 
-      {me.user.role === 'PATIENT' && <DeleteAccount />}
+      {!isDoctor && <DeleteAccount />}
     </AppShell>
+  );
+}
+
+/** Identity card at the top of the profile — who this account is and, for a
+ *  doctor, whether they're verified. */
+function ProfileHeader({ me }: { me: Me }) {
+  const isDoctor = me.user.role === 'DOCTOR';
+  const verified = Boolean(me.doctorProfile?.verifiedAt);
+  const d = me.doctorProfile;
+
+  return (
+    <Card>
+      <CardContent className="flex flex-wrap items-center gap-4">
+        <Avatar name={me.user.fullName} src={me.user.avatarUrl} size="lg" />
+        <div className="grid gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-lg font-semibold">{me.user.fullName}</span>
+            <RoleBadge role={me.user.role} />
+            {isDoctor &&
+              (verified ? (
+                <Badge variant="outline" className="border border-success-border bg-success-bg text-success-fg gap-1">
+                  <BadgeCheckIcon aria-hidden />
+                  Verified
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="border border-warning-border bg-warning-bg text-warning-fg gap-1">
+                  <ClockIcon aria-hidden />
+                  Verification pending
+                </Badge>
+              ))}
+          </div>
+          <p className="text-sm text-muted-foreground">{me.user.email}</p>
+          {isDoctor && d && (d.medicalCouncil || d.registrationNumber) && (
+            <p className="text-sm text-muted-foreground">
+              {[d.medicalCouncil, d.registrationNumber && `Reg. No. ${d.registrationNumber}`]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
+          )}
+          {!isDoctor && me.patientProfile?.dob && (
+            <p className="text-sm text-muted-foreground">Born {me.patientProfile.dob}</p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
