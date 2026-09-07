@@ -57,11 +57,11 @@ const DOCTORS = [
 ];
 
 const PATIENTS = [
-  { email: 'priya.nair@example.com', fullName: 'Priya Nair', dob: '1992-04-18', gender: 'female', bloodGroup: 'O+' },
-  { email: 'rahul.verma@example.com', fullName: 'Rahul Verma', dob: '1985-11-02', gender: 'male', bloodGroup: 'B+' },
-  { email: 'sara.khan@example.com', fullName: 'Sara Khan', dob: '1998-07-27', gender: 'female', bloodGroup: 'A+' },
-  { email: 'vikram.rao@example.com', fullName: 'Vikram Rao', dob: '1979-01-09', gender: 'male', bloodGroup: 'AB+' },
-  { email: 'meera.iyer@example.com', fullName: 'Meera Iyer', dob: '2001-09-14', gender: 'female', bloodGroup: 'O-' },
+  { email: 'priya.nair@example.com', fullName: 'Priya Nair', dob: '1992-04-18', gender: 'FEMALE', bloodGroup: 'O+' },
+  { email: 'rahul.verma@example.com', fullName: 'Rahul Verma', dob: '1985-11-02', gender: 'MALE', bloodGroup: 'B+' },
+  { email: 'sara.khan@example.com', fullName: 'Sara Khan', dob: '1998-07-27', gender: 'FEMALE', bloodGroup: 'A+' },
+  { email: 'vikram.rao@example.com', fullName: 'Vikram Rao', dob: '1979-01-09', gender: 'MALE', bloodGroup: 'AB+' },
+  { email: 'meera.iyer@example.com', fullName: 'Meera Iyer', dob: '2001-09-14', gender: 'FEMALE', bloodGroup: 'O-' },
 ];
 
 const REASONS = [

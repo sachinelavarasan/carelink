@@ -115,7 +115,8 @@ export class UsersService {
       id: row.id,
       userId: row.userId,
       dob: row.dob,
-      gender: row.gender as PatientProfileOut['gender'],
+      // Older rows may hold lower-case values ('female'); the contract is upper-case.
+      gender: row.gender.toUpperCase() as PatientProfileOut['gender'],
       bloodGroup: row.bloodGroup ?? undefined,
       heightCm: row.heightCm ?? undefined,
       weightKg: row.weightKg ?? undefined,
