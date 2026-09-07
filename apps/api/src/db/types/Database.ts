@@ -1,9 +1,9 @@
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import type postgres from 'postgres';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { Pool } from 'pg';
 
 import type * as schema from '../schema';
 
 export type Database = {
-  connection: postgres.Sql;
-  db: PostgresJsDatabase<typeof schema>;
+  connection: Pool;
+  db: NodePgDatabase<typeof schema>;
 };

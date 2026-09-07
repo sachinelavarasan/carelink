@@ -1,9 +1,9 @@
 export interface Env {
-  NODE_ENV: 'development' | 'production' | 'staging';
+  NODE_ENV: 'development' | 'test' | 'staging' | 'production';
   DB_HOST: string;
-  DB_PORT: number;
+  DB_PORT: string;
   DB_NAME: string;
   DB_USER: string;
   DB_PASSWORD: string;
-  DEBUG: boolean;
+  DEBUG: string;
 }

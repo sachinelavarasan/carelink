@@ -20,6 +20,7 @@ import { RootModule } from './root/root.module';
 import { StorageModule } from './storage/storage.module';
 import { UsersModule } from './users/users.module';
 import { VideoModule } from './video/video.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { VideoModule } from './video/video.module';
     }),
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
     DbModule,
+    CommonModule,
     AuditModule,
     MailModule,
     StorageModule,
@@ -47,10 +49,6 @@ import { VideoModule } from './video/video.module';
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
-    // CSRF double-submit guard. Temporarily switchable off via CSRF_DISABLED=true
-    // while the web app and API are on different sites: stale cross-site cookies
-    // trip the check on POST /auth/login and surface as a bogus 403. Remove the
-    // flag once the Vercel same-origin proxy is live.
     ...(process.env.CSRF_DISABLED === 'true'
       ? []
       : [{ provide: APP_GUARD, useClass: CsrfGuard }]),

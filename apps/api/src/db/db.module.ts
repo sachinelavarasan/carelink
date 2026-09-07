@@ -1,15 +1,16 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
 
+import connectionOptions from './config/database.config';
 import { DB } from './database.constants';
 import { DatabaseService } from './database.service';
-import { Database } from './types/Database';
+
+import type { Database } from './types/Database';
+import type { Env } from '../env.interface';
 
 import * as schema from './schema';
-
-import type { AppConfig } from '../config';
 
 @Global()
 @Module({
@@ -17,22 +18,13 @@ import type { AppConfig } from '../config';
     {
       provide: DB,
       inject: [ConfigService],
-      useFactory: (configService: ConfigService<AppConfig>): Database => {
-        const url =
-          configService.get('DATABASE_URL', { infer: true }) ?? process.env.DATABASE_URL;
-        if (!url) {
-          throw new Error('DATABASE_URL is not set');
-        }
-        const connection = postgres(url, {
-          max: Number(process.env.DB_POOL_MAX ?? 1),
-          idle_timeout: 20,
-          prepare: false, // required for pgBouncer transaction pooling
-        });
+      useFactory: (configService: ConfigService<Env>): Database => {
+        const connection = new Pool(connectionOptions);
         return {
           connection,
           db: drizzle(connection, {
             schema,
-            logger: configService.get('NODE_ENV', { infer: true }) === 'development',
+            logger: configService.get('DEBUG') === 'true',
           }),
         };
       },

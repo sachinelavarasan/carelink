@@ -1,10 +1,19 @@
 import { z } from 'zod';
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  NODE_ENV: z.enum(['development', 'test', 'staging', 'production']).default('development'),
 
-  // Database (Supabase Postgres) — required
-  DATABASE_URL: z.string().url(),
+  // Database (Postgres) — required. The app runtime (src/db/db.module.ts), the
+  // migrator and the seed all connect with these discrete credentials via
+  // src/db/config/*.config.ts. DATABASE_URL/DIRECT_URL are optional and only
+  // consumed by the standalone getDb() helper in src/db/index.ts.
+  DB_HOST: z.string().min(1),
+  DB_PORT: z.coerce.number().int().positive().default(5432),
+  DB_NAME: z.string().min(1),
+  DB_USER: z.string().min(1),
+  DB_PASSWORD: z.string().min(1),
+  DEBUG: z.enum(['true', 'false']).optional(),
+  DATABASE_URL: z.string().url().optional(),
   DIRECT_URL: z.string().url().optional(),
 
   // Our own auth — required
@@ -72,10 +81,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     Object.entries(env).map(([key, value]) => [key, value === '' ? undefined : value]),
   );
 
-  // The app runtime (postgres-js) connects via DATABASE_URL; migrations and the
-  // seed use the discrete DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD credentials
-  // (see src/db/config/{database,migration}.config.ts). If only the discrete
-  // parts are set, assemble the URL so a single set of vars drives both.
+  // The app, migrator and seed connect with the discrete DB_* credentials (see
+  // src/db/config/{database,migration}.config.ts). Assemble DATABASE_URL from
+  // those parts when it isn't set directly, so the standalone getDb() helper in
+  // src/db/index.ts keeps working off a single set of vars.
   const { DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD } = cleaned;
   if (!cleaned.DATABASE_URL && DB_HOST && DB_PORT && DB_NAME && DB_USER && DB_PASSWORD) {
     const url = `postgresql://${encodeURIComponent(DB_USER)}:${encodeURIComponent(
