@@ -1,25 +1,34 @@
 import 'reflect-metadata';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import serverlessHttp from 'serverless-http';
 import type { Express } from 'express';
 import { createApp } from '../src/bootstrap';
 
-type Handler = (req: IncomingMessage, res: ServerResponse) => Promise<void>;
+let appPromise: Promise<Express> | undefined;
 
-let handlerPromise: Promise<Handler> | undefined;
-
-async function build(): Promise<Handler> {
+async function build(): Promise<Express> {
   const app = await createApp();
   await app.init();
-  const express = app.getHttpAdapter().getInstance() as Express;
-  return serverlessHttp(express) as unknown as Handler;
+  return app.getHttpAdapter().getInstance() as Express;
 }
 
 export default async function handler(
   req: IncomingMessage,
   res: ServerResponse,
 ): Promise<void> {
-  handlerPromise ??= build();
-  const h = await handlerPromise;
-  return h(req, res);
+  try {
+    appPromise ??= build();
+    const express = await appPromise;
+    // Vercel invokes this with Node's native (req, res); an Express instance is
+    // itself a `(req, res)` handler, so hand off directly. No serverless-http:
+    // that wraps the app in an AWS Lambda `(event, context)` signature, which
+    // never writes to Vercel's `res` — the function then hangs until it hits
+    // maxDuration and returns FUNCTION_INVOCATION_TIMEOUT (504).
+    express(req, res);
+  } catch (err) {
+    // Don't leave a rejected promise cached — let the next request rebuild.
+    appPromise = undefined;
+    console.error('API bootstrap failed', err);
+    res.statusCode = 500;
+    res.end('Internal Server Error');
+  }
 }
