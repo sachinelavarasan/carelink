@@ -84,8 +84,8 @@ export class UsersService {
         .where(
           or(eq(medicalDocuments.patientId, userId), eq(medicalDocuments.uploadedById, userId)),
         );
-      // Cascades: auth_tokens, patient/doctor profiles (→ availability_*),
-      // notifications, push_tokens, any remaining medical_documents by patientId.
+      // Cascades: patient/doctor profiles (→ availability_*), notifications,
+      // push_tokens, any remaining medical_documents by patientId.
       await tx.delete(users).where(eq(users.id, userId));
     });
 
