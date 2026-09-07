@@ -122,10 +122,17 @@ function ListView({
 }) {
   return (
     <>
-      <Tabs value={scope} onValueChange={(v) => onScope(v as Scope)} className="my-3">
-        <TabsList>
-          <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
+      <Tabs value={scope} onValueChange={(v) => onScope(v as Scope)} className="mb-4 mt-3">
+        <TabsList
+          variant="line"
+          className="h-9 w-full justify-start gap-5 rounded-none border-b border-border p-0"
+        >
+          <TabsTrigger value="upcoming" className="flex-none px-1 pb-2 text-sm">
+            Upcoming
+          </TabsTrigger>
+          <TabsTrigger value="completed" className="flex-none px-1 pb-2 text-sm">
+            Completed
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 

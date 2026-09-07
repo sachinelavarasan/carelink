@@ -410,7 +410,8 @@ export type PrescriptionView = z.infer<typeof prescriptionViewSchema>;
 
 /* ----------------------------------------------------------- medical history */
 
-/** One past consultation, with its prescription summary if there is one. */
+/** One past consultation. `prescription` carries the full record (or null) so
+ *  the history UI can show the detail without a second request per row. */
 export const medicalHistoryEntrySchema = z.object({
   appointmentId: cuid,
   scheduledStart: isoDate,
@@ -418,16 +419,7 @@ export const medicalHistoryEntrySchema = z.object({
   reasonForVisit: z.string(),
   doctorName: z.string(),
   patientName: z.string(),
-  prescription: z
-    .object({
-      id: cuid,
-      diagnosis: z.string(),
-      issuedAt: isoDate,
-      followUpDate: z.string().date().nullable(),
-      itemCount: z.number().int().nonnegative(),
-      pdfReady: z.boolean(),
-    })
-    .nullable(),
+  prescription: prescriptionViewSchema.nullable(),
 });
 export type MedicalHistoryEntry = z.infer<typeof medicalHistoryEntrySchema>;
 

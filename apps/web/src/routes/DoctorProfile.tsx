@@ -2,6 +2,7 @@ import type { DoctorPublic } from '@carelink/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
+import { BackLink } from '../components/BackLink';
 import { Notice } from '../components/Notice';
 import { Spinner } from '../components/Spinner';
 import { buttonVariants } from '../components/ui/button';
@@ -17,9 +18,7 @@ export default function DoctorProfile() {
 
   return (
     <AppShell>
-      <Link className="text-sm text-primary underline underline-offset-4" to="/doctors">
-        ← All doctors
-      </Link>
+      <BackLink to="/doctors">All doctors</BackLink>
 
       {doctorQ.isLoading && (
         <p className="mt-3 inline-flex items-center gap-2 text-sm text-muted-foreground">

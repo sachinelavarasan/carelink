@@ -1,8 +1,9 @@
 import { DrugCategoryFlag, type PrescriptionView } from '@carelink/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
+import { BackLink } from '../components/BackLink';
 import { Notice } from '../components/Notice';
 import { PrescriptionDetails } from '../components/PrescriptionDetails';
 import { Spinner } from '../components/Spinner';
@@ -67,18 +68,16 @@ export default function Prescription() {
   if (rxQ.isError && !missing) {
     return (
       <AppShell>
+        <BackLink to="/appointments">Appointments</BackLink>
         <Notice kind="error">{errMessage(rxQ.error, 'Could not load the prescription')}</Notice>
-        <BackLink appointmentId={appointmentId} />
       </AppShell>
     );
   }
 
   return (
     <AppShell>
-      <div className="mb-2 flex items-baseline justify-between gap-3">
-        <h1 className="text-xl font-semibold">Prescription</h1>
-        <BackLink appointmentId={appointmentId} />
-      </div>
+      <BackLink to="/appointments">Appointments</BackLink>
+      <h1 className="mb-2 text-xl font-semibold">Prescription</h1>
 
       {editable ? (
         <PrescriptionForm
@@ -100,14 +99,6 @@ export default function Prescription() {
         </Notice>
       )}
     </AppShell>
-  );
-}
-
-function BackLink({ appointmentId: _appointmentId }: { appointmentId: string }) {
-  return (
-    <Link className="text-sm text-primary underline underline-offset-4" to="/appointments">
-      ← Appointments
-    </Link>
   );
 }
 

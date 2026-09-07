@@ -2,6 +2,7 @@ import type { MedicalHistoryEntry, MedicalHistory as MedicalHistoryPage } from '
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
+import { BackLink } from '../components/BackLink';
 import { Notice } from '../components/Notice';
 import { ConsultationRecordButton, PdfButton } from '../components/PrescriptionDetails';
 import { Spinner } from '../components/Spinner';
@@ -39,14 +40,10 @@ export default function MedicalHistory() {
 
   return (
     <AppShell>
-      <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h1 className="text-xl font-semibold">{title}</h1>
-        {backTo && (
-          <Link className="text-sm text-primary underline underline-offset-4" to={backTo}>
-            ← {backTo === '/patients' ? 'Patients' : 'My doctors'}
-          </Link>
-        )}
-      </div>
+      {backTo && (
+        <BackLink to={backTo}>{backTo === '/patients' ? 'Patients' : 'My doctors'}</BackLink>
+      )}
+      <h1 className="mb-3 text-xl font-semibold">{title}</h1>
 
       {historyQ.isLoading && (
         <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
@@ -90,14 +87,18 @@ function HistoryCard({ e, doctorView }: { e: MedicalHistoryEntry; doctorView: bo
               {e.prescription.diagnosis}
             </span>
             <span className="text-muted-foreground">
-              {e.prescription.itemCount} medicine
-              {e.prescription.itemCount === 1 ? '' : 's'}
+              {e.prescription.items.length} medicine
+              {e.prescription.items.length === 1 ? '' : 's'}
               {e.prescription.followUpDate
                 ? ` · follow-up ${e.prescription.followUpDate}`
                 : ''}
             </span>
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              <ConsultationRecordButton appointmentId={e.appointmentId} label="View details" />
+              <ConsultationRecordButton
+                appointmentId={e.appointmentId}
+                record={e.prescription}
+                label="View details"
+              />
               <Link
                 className="text-sm text-primary underline underline-offset-4"
                 to={`/appointments/${e.appointmentId}/prescription`}

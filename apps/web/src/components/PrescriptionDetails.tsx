@@ -159,15 +159,19 @@ function ConsultationRecord({
   return rxQ.data ? <PrescriptionDetails rx={rxQ.data} /> : null;
 }
 
-/** Button that opens the full consultation record for an appointment in a
- *  sheet (bottom sheet on mobile, centred modal on desktop). */
+/** Button that opens the full consultation record in a sheet (bottom sheet on
+ *  mobile, centred modal on desktop). Pass `record` when the caller already has
+ *  the full prescription (e.g. from the history list API) to skip the fetch;
+ *  otherwise it lazily loads it from the appointment when opened. */
 export function ConsultationRecordButton({
   appointmentId,
+  record,
   label = 'View consultation record',
   size = 'sm',
   variant = 'outline',
 }: {
   appointmentId: string;
+  record?: PrescriptionView | null;
   label?: string;
   size?: React.ComponentProps<typeof Button>['size'];
   variant?: React.ComponentProps<typeof Button>['variant'];
@@ -185,7 +189,11 @@ export function ConsultationRecordButton({
         }
       />
       <SheetContent title="Consultation record">
-        <ConsultationRecord appointmentId={appointmentId} active={open} />
+        {record ? (
+          <PrescriptionDetails rx={record} />
+        ) : (
+          <ConsultationRecord appointmentId={appointmentId} active={open} />
+        )}
       </SheetContent>
     </Sheet>
   );
