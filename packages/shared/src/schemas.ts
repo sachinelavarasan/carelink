@@ -238,6 +238,7 @@ export type AppointmentPage = z.infer<typeof appointmentPageSchema>;
 /** Home-page summary: three counts, a 14-day daily series, and a lifetime
  *  status breakdown (used by the doctor dashboard). */
 export const appointmentSummarySchema = z.object({
+  today: z.number().int().nonnegative(), // non-cancelled appointments dated today (clinic tz)
   upcoming: z.number().int().nonnegative(),
   next7Days: z.number().int().nonnegative(),
   completed: z.number().int().nonnegative(),
@@ -249,7 +250,10 @@ export const appointmentSummarySchema = z.object({
     COMPLETED: z.number().int().nonnegative(),
     NO_SHOW: z.number().int().nonnegative(),
   }),
-  patientsSeen: z.number().int().nonnegative(),
+  patientsSeen: z.number().int().nonnegative(), // doctor: distinct patients on COMPLETED visits
+  counterpartiesSeen: z.number().int().nonnegative(), // distinct other party over non-cancelled
+  followUpsDue: z.number().int().nonnegative(), // patient: finalised Rx with a follow-up in the next 14 days
+  pendingRecords: z.number().int().nonnegative(), // doctor: own prescriptions still in draft
 });
 export type AppointmentSummary = z.infer<typeof appointmentSummarySchema>;
 

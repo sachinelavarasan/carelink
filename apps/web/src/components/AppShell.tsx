@@ -23,7 +23,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <strong className="text-base font-semibold">CareLink</strong>
         <nav className="flex flex-1 items-center gap-4">
           <NavLink to="/" end className={navLink}>
-            Home
+            Dashboard
           </NavLink>
           <NavLink to="/appointments" className={navLink}>
             Appointments
