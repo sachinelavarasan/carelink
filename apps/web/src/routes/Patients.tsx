@@ -1,9 +1,11 @@
 import type { VisitedPatient } from '@carelink/shared';
 import { useQuery } from '@tanstack/react-query';
+import { UsersRoundIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
+import { CardGridSkeleton, cardGridClass } from '../components/CardGridSkeleton';
+import { EmptyState } from '../components/EmptyState';
 import { Notice } from '../components/Notice';
-import { Spinner } from '../components/Spinner';
 import { Badge } from '../components/ui/badge';
 import { Card, CardContent } from '../components/ui/card';
 import { apiGet } from '../lib/api';
@@ -33,17 +35,17 @@ export default function Patients() {
     <AppShell>
       <h1 className="mb-3 text-xl font-semibold">Patients</h1>
 
-      {patientsQ.isLoading && (
-        <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-          <Spinner /> Loading…
-        </p>
-      )}
+      {patientsQ.isLoading && <CardGridSkeleton count={4} />}
       {patientsQ.isError && <Notice kind="error">Could not load patients.</Notice>}
       {patientsQ.data && patients.length === 0 && (
-        <p className="text-sm text-muted-foreground">No patients yet.</p>
+        <EmptyState
+          icon={UsersRoundIcon}
+          title="No patients yet"
+          description="Patients you consult will appear here with a link to their history."
+        />
       )}
 
-      <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className={cardGridClass}>
         {patients.map((p) => {
           const age = ageFrom(p.dob);
           const meta = [p.gender, age != null ? `${age} yrs` : null].filter(Boolean).join(' · ');

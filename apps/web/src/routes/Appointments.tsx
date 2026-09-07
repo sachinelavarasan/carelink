@@ -1,8 +1,11 @@
 import { type AppointmentListItem, type AppointmentPage, AppointmentStatus } from '@carelink/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { CalendarX2Icon } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
+import { CardGridSkeleton, cardGridClass } from '../components/CardGridSkeleton';
+import { EmptyState } from '../components/EmptyState';
 import { ConsultationRecordButton } from '../components/PrescriptionDetails';
 import { Notice } from '../components/Notice';
 import { Spinner } from '../components/Spinner';
@@ -136,16 +139,33 @@ function ListView({
         </TabsList>
       </Tabs>
 
-      {isLoading && (
-        <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-          <Spinner /> Loading…
-        </p>
-      )}
+      {isLoading && <CardGridSkeleton count={6} />}
+
       {data && data.items.length === 0 && (
-        <p className="text-sm text-muted-foreground">Nothing here.</p>
+        <EmptyState
+          icon={CalendarX2Icon}
+          title={scope === 'upcoming' ? 'No upcoming appointments' : 'No completed consultations'}
+          description={
+            scope === 'upcoming'
+              ? role === 'PATIENT'
+                ? 'Book a consultation with a doctor to see it here.'
+                : 'Confirmed appointments will appear here.'
+              : 'Consultations show up here once they are completed.'
+          }
+          action={
+            scope === 'upcoming' && role === 'PATIENT' ? (
+              <Link
+                to="/doctors"
+                className="text-sm text-primary underline underline-offset-4"
+              >
+                Find a doctor
+              </Link>
+            ) : undefined
+          }
+        />
       )}
 
-      <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className={cardGridClass}>
         {data?.items.map((a) =>
           scope !== 'upcoming' ? (
             <PastCard key={a.id} a={a} />

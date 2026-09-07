@@ -1,11 +1,13 @@
 import type { MedicalHistoryEntry, MedicalHistory as MedicalHistoryPage } from '@carelink/shared';
 import { useQuery } from '@tanstack/react-query';
+import { FileClockIcon } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
 import { BackLink } from '../components/BackLink';
+import { CardGridSkeleton, cardGridClass } from '../components/CardGridSkeleton';
+import { EmptyState } from '../components/EmptyState';
 import { Notice } from '../components/Notice';
 import { ConsultationRecordButton, PdfButton } from '../components/PrescriptionDetails';
-import { Spinner } from '../components/Spinner';
 import { StatusBadge } from '../components/StatusBadge';
 import { Card, CardContent } from '../components/ui/card';
 import { apiGet } from '../lib/api';
@@ -45,19 +47,23 @@ export default function MedicalHistory() {
       )}
       <h1 className="mb-3 text-xl font-semibold">{title}</h1>
 
-      {historyQ.isLoading && (
-        <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-          <Spinner /> Loading…
-        </p>
-      )}
-      {historyQ.isError && (
-        <Notice kind="error">Could not load the history.</Notice>
-      )}
+      {historyQ.isLoading && <CardGridSkeleton count={6} />}
+      {historyQ.isError && <Notice kind="error">Could not load the history.</Notice>}
       {historyQ.data && items.length === 0 && (
-        <p className="text-sm text-muted-foreground">No past consultations.</p>
+        <EmptyState
+          icon={FileClockIcon}
+          title="No consultations yet"
+          description={
+            doctorView
+              ? 'This patient has no past consultations with you.'
+              : doctorId
+                ? 'You have no past consultations with this doctor.'
+                : 'Your consultations and prescriptions will appear here.'
+          }
+        />
       )}
 
-      <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className={cardGridClass}>
         {items.map((e) => (
           <HistoryCard key={e.appointmentId} e={e} doctorView={doctorView} />
         ))}
