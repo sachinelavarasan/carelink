@@ -42,6 +42,7 @@ export default function App() {
       <Route path="/__chart" element={<ChartPreview />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/signup" element={<Register />} />
       <Route path="/verify" element={<VerifyEmail />} />
       <Route path="/forgot" element={<ForgotPassword />} />
       <Route path="/reset" element={<ResetPassword />} />

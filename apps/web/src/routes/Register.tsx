@@ -5,6 +5,7 @@ import { Notice } from '../components/Notice';
 import { Button } from '../components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '../components/ui/field';
 import { Input } from '../components/ui/input';
+import { PasswordInput } from '../components/ui/password-input';
 import { errMessage } from '../lib/api';
 import { useAuth } from '../lib/auth';
 
@@ -71,9 +72,8 @@ export default function Register() {
           </Field>
           <Field>
             <FieldLabel htmlFor={pwId}>Password (min 8 characters)</FieldLabel>
-            <Input
+            <PasswordInput
               id={pwId}
-              type="password"
               autoComplete="new-password"
               minLength={8}
               required
