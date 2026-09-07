@@ -3,6 +3,7 @@ import type { DoctorProfileInput, PatientProfileInput } from '@carelink/shared';
 import { BadgeCheckIcon, ClockIcon } from 'lucide-react';
 import { AppShell } from '../components/AppShell';
 import { Avatar } from '../components/Avatar';
+import { MedicineRows, fromMedicineItem, toMedicineItems, type MedicineRow } from '../components/MedicineRows';
 import { Notice } from '../components/Notice';
 import { RoleBadge } from '../components/RoleBadge';
 import { Badge } from '../components/ui/badge';
@@ -309,6 +310,9 @@ function DoctorForm({ me, onSaved }: { me: Me; onSaved: () => Promise<void> }) {
     clinicName: d?.clinicName ?? '',
     bio: d?.bio ?? '',
   });
+  const [meds, setMeds] = useState<MedicineRow[]>(
+    () => (d?.favoriteMedicines ?? []).map(fromMedicineItem),
+  );
   const set = (k: keyof typeof f) => (v: string) => setF((s) => ({ ...s, [k]: v }));
   const { busy, error, ok, save } = useSaver<DoctorProfileInput>('/me/doctor-profile', onSaved);
 
@@ -323,6 +327,7 @@ function DoctorForm({ me, onSaved }: { me: Me; onSaved: () => Promise<void> }) {
       consultationFeeInr: Number(f.consultationFeeInr) || 0,
       clinicName: f.clinicName || undefined,
       bio: f.bio || undefined,
+      favoriteMedicines: toMedicineItems(meds),
     });
   }
 
@@ -359,6 +364,16 @@ function DoctorForm({ me, onSaved }: { me: Me; onSaved: () => Promise<void> }) {
         />
         <TextField label="Clinic name" value={f.clinicName} onChange={set('clinicName')} />
         <TextField label="Short bio" value={f.bio} onChange={set('bio')} />
+
+        <div className="grid gap-2">
+          <span className="text-sm font-medium">Regular medicines</span>
+          <p className="text-sm text-muted-foreground">
+            Save the medicines you prescribe often — you can drop them into a prescription in one
+            click.
+          </p>
+          <MedicineRows rows={meds} onChange={setMeds} addLabel="Add a regular medicine" />
+        </div>
+
         <Button type="submit" className="w-fit" disabled={busy}>
           {busy ? 'Saving…' : 'Save profile'}
         </Button>
