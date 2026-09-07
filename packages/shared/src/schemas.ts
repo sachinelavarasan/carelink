@@ -165,6 +165,17 @@ export const visitedDoctorSchema = doctorPublicSchema.extend({
 });
 export type VisitedDoctor = z.infer<typeof visitedDoctorSchema>;
 
+/** A patient a doctor has consulted — for the doctor's patient list. */
+export const visitedPatientSchema = z.object({
+  id: cuid,
+  fullName: z.string(),
+  dob: z.string().date().nullable(),
+  gender: z.string().nullable(),
+  lastVisitedAt: isoDate,
+  visitCount: z.number().int().positive(),
+});
+export type VisitedPatient = z.infer<typeof visitedPatientSchema>;
+
 /* ------------------------------------------------------------ appointments */
 
 export const createAppointmentSchema = z.object({
@@ -447,6 +458,13 @@ export const cursorQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 export type CursorQuery = z.infer<typeof cursorQuerySchema>;
+
+/** Patient history query — cursor paging plus an optional filter to a single
+ *  doctor (the patient's "history with Dr X" view). */
+export const medicalHistoryQuerySchema = cursorQuerySchema.extend({
+  doctorId: cuid.optional(),
+});
+export type MedicalHistoryQuery = z.infer<typeof medicalHistoryQuerySchema>;
 
 /* -------------------------------------------------------------- me / profiles */
 

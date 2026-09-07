@@ -11,6 +11,8 @@ import Doctors from './routes/Doctors';
 import ForgotPassword from './routes/ForgotPassword';
 import Login from './routes/Login';
 import MedicalHistory from './routes/MedicalHistory';
+import MyDoctors from './routes/MyDoctors';
+import Patients from './routes/Patients';
 import Prescription from './routes/Prescription';
 import Profile from './routes/Profile';
 import Register from './routes/Register';
@@ -41,6 +43,9 @@ export default function App() {
         element={protect(<Prescription />)}
       />
       <Route path="/history" element={protect(<MedicalHistory />)} />
+      <Route path="/my-doctors" element={protect(<MyDoctors />)} />
+      <Route path="/my-doctors/:doctorId" element={protect(<MedicalHistory />)} />
+      <Route path="/patients" element={protect(<Patients />)} />
       <Route path="/patients/:patientId/history" element={protect(<MedicalHistory />)} />
       <Route path="/doctors" element={protect(<Doctors />)} />
       <Route path="/doctors/:id" element={protect(<DoctorProfile />)} />

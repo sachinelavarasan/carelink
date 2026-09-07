@@ -32,8 +32,13 @@ export function AppShell({ children }: { children: ReactNode }) {
             </NavLink>
           )}
           {!isDoctor && (
-            <NavLink to="/history" className={navLink}>
-              History
+            <NavLink to="/my-doctors" className={navLink}>
+              My doctors
+            </NavLink>
+          )}
+          {isDoctor && (
+            <NavLink to="/patients" className={navLink}>
+              Patients
             </NavLink>
           )}
           {isDoctor && (

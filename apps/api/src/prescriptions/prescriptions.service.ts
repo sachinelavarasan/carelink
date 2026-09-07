@@ -179,9 +179,12 @@ export class PrescriptionsService {
 
   async myHistory(
     user: AuthUser,
-    query: { cursor?: string; limit: number },
+    query: { cursor?: string; limit: number; doctorId?: string },
   ): Promise<MedicalHistory> {
-    return this.listHistory({ patientId: user.id, viewerIsPatient: true }, query);
+    return this.listHistory(
+      { patientId: user.id, doctorId: query.doctorId, viewerIsPatient: true },
+      query,
+    );
   }
 
   async patientHistory(
