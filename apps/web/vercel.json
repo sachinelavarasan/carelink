@@ -3,7 +3,13 @@
   "framework": "vite",
   "outputDirectory": "dist",
   "buildCommand": "cd ../.. && npm run build --workspace @carelink/shared && npm run build --workspace @carelink/web",
-  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }],
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://carelink-api-fsog.onrender.com/api/:path*"
+    },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/assets/(.*)",
