@@ -148,11 +148,18 @@ Workflows already in the repo: `ci.yml` (build/lint/test), `cron.yml` (every 5 m
 
 ## 6. Gotchas
 
-- **Cookie auth across `*.vercel.app`**: `vercel.app` is on the public‑suffix list,
-  so `carelink-web.vercel.app` and `carelink-api.vercel.app` count as *different
-  sites* — cookie auth then needs `COOKIE_SAMESITE=none` + `COOKIE_SECURE=true`.
-  Much simpler: use a real domain with `app.` / `api.` subdomains and keep
-  `SAMESITE=lax`.
+- **Cookie auth across `*.vercel.app`**: `vercel.app` is on the public‑suffix
+  list, so `carelink-web.vercel.app` and `carelink-api.vercel.app` count as
+  *different sites* and a browser will not keep the auth cookie across them.
+  The fix in use: the web project's `/api/*` rewrite in
+  [`apps/web/vercel.json`](../apps/web/vercel.json) proxies to the API project's
+  deployment URL, so from the browser every request is same‑origin. Requirements
+  for it to work: `VITE_API_URL` **empty** on the web project (relative `/api`
+  calls); on the API project `COOKIE_SECURE=true`, `COOKIE_SAMESITE=lax`, and
+  `COOKIE_DOMAIN` **unset** (a `Domain=` value — especially anything under
+  `.vercel.app` — makes the browser drop the cookie on the web origin). A real
+  domain with `app.` / `api.` subdomains is the cleaner long‑term option and
+  keeps the same settings.
 - **Migrations use the discrete `DB_*` vars** (`DB_HOST`/`DB_PORT`/`DB_NAME`/
   `DB_USER`/`DB_PASSWORD`) — point them at the direct port‑5432 connection, not
   the pooled URL; drizzle‑kit and `migration:run` need a non‑pgBouncer connection.

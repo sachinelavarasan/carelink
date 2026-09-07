@@ -35,9 +35,11 @@ const envSchema = z.object({
   // Links in emails point here
   APP_WEB_URL: z.string().url().default('http://localhost:5173'),
 
-  // Web auth cookies. SECURE defaults to (NODE_ENV === production). SAMESITE, if
-  // unset, follows SECURE: `none` for a secure (cross-site, e.g. two *.vercel.app
-  // subdomains) deployment, `lax` for local http dev. Set it explicitly to pin.
+  // Web auth cookies. SECURE defaults to (NODE_ENV === production). SAMESITE
+  // defaults to `lax` — the web app always reaches the API on its own origin (a
+  // dev proxy locally, the Vercel `/api` rewrite in prod). Only a cross-site
+  // deployment needs `none`, and browsers block those third-party cookies now.
+  // DOMAIN must stay unset so the cookie binds host-only to the web origin.
   COOKIE_SECURE: z
     .enum(['true', 'false'])
     .optional()

@@ -18,12 +18,13 @@ export class CookieService {
     const secure =
       this.config.get('COOKIE_SECURE', { infer: true }) ??
       this.config.get('NODE_ENV', { infer: true }) === 'production';
-    // A Secure cookie almost always means the web app and API sit on different
-    // sites (two *.vercel.app subdomains, a separate API host); the browser only
-    // keeps such a cookie from a cross-site XHR when it is SameSite=None. Fall
-    // back to Lax for local http dev, where None would be rejected.
-    const sameSite =
-      this.config.get('COOKIE_SAMESITE', { infer: true }) ?? (secure ? 'none' : 'lax');
+    // The browser only ever reaches the API through the web origin — Vite's dev
+    // proxy locally, the Vercel `/api` rewrite in prod — so the auth cookie is
+    // always same-site and Lax is the right default. A genuinely cross-site
+    // deployment (web and API on different sites) must set COOKIE_SAMESITE=none
+    // explicitly, and accept that browsers block such third-party cookies by
+    // default (the session then drops on the next page load).
+    const sameSite = this.config.get('COOKIE_SAMESITE', { infer: true }) ?? 'lax';
     const domain = this.config.get('COOKIE_DOMAIN', { infer: true });
     const maxAge = tokens.expiresIn * 1000;
 
