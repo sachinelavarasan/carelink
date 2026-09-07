@@ -1,9 +1,11 @@
 import type { VisitedDoctor } from '@carelink/shared';
 import { useQuery } from '@tanstack/react-query';
+import { UsersRoundIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
+import { CardGridSkeleton, cardGridClass } from '../components/CardGridSkeleton';
+import { EmptyState } from '../components/EmptyState';
 import { Notice } from '../components/Notice';
-import { Spinner } from '../components/Spinner';
 import { Badge } from '../components/ui/badge';
 import { Card, CardContent } from '../components/ui/card';
 import { apiGet } from '../lib/api';
@@ -27,22 +29,22 @@ export default function MyDoctors() {
         </Link>
       </div>
 
-      {visitedQ.isLoading && (
-        <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-          <Spinner /> Loading…
-        </p>
-      )}
+      {visitedQ.isLoading && <CardGridSkeleton count={4} />}
       {visitedQ.isError && <Notice kind="error">Could not load your doctors.</Notice>}
       {visitedQ.data && doctors.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          You haven&apos;t consulted any doctors yet.{' '}
-          <Link className="text-primary underline underline-offset-4" to="/doctors">
-            Find a doctor
-          </Link>
-        </p>
+        <EmptyState
+          icon={UsersRoundIcon}
+          title="No doctors yet"
+          description="Doctors you consult will be listed here for quick access to their history."
+          action={
+            <Link className="text-sm text-primary underline underline-offset-4" to="/doctors">
+              Find a doctor
+            </Link>
+          }
+        />
       )}
 
-      <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className={cardGridClass}>
         {doctors.map((d) => (
           <Card key={d.id}>
             <CardContent className="grid gap-1">
