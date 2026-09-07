@@ -15,7 +15,7 @@ import MyDoctors from './routes/MyDoctors';
 import Patients from './routes/Patients';
 import Prescription from './routes/Prescription';
 import Profile from './routes/Profile';
-import Register from './routes/Register';
+// import Register from './routes/Register'; // self-signup hidden for now
 import ResetPassword from './routes/ResetPassword';
 import VerifyEmail from './routes/VerifyEmail';
 import VideoCall from './routes/VideoCall';
@@ -41,8 +41,9 @@ export default function App() {
       <Routes>
       <Route path="/__chart" element={<ChartPreview />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/signup" element={<Register />} />
+      {/* Self-signup hidden for now — accounts are provisioned. */}
+      <Route path="/register" element={<Navigate to="/login" replace />} />
+      <Route path="/signup" element={<Navigate to="/login" replace />} />
       <Route path="/verify" element={<VerifyEmail />} />
       <Route path="/forgot" element={<ForgotPassword />} />
       <Route path="/reset" element={<ResetPassword />} />
