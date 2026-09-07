@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(
     async (input: LoginInput) => {
       const { data } = await api.post<AuthTokens>('/auth/login', input);
-      await authToken.set(data);
+      await authToken.set({ accessToken: data.accessToken });
       await reload();
     },
     [reload],
@@ -57,10 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
-    const refreshToken = await authToken.getRefresh();
-    if (refreshToken) {
-      await api.post('/auth/logout', { refreshToken }).catch(() => undefined);
-    }
+    await api.post('/auth/logout', {}).catch(() => undefined);
     await authToken.clear();
     setMe(null);
     setStatus('anonymous');

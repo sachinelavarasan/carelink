@@ -18,17 +18,15 @@ function makeService(user: FakeUser | null) {
     sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
   };
   const tokens = {
-    issue: vi.fn().mockResolvedValue('refresh-raw'),
+    issue: vi.fn().mockResolvedValue('token-raw'),
     consume: vi.fn().mockResolvedValue(null),
-    revokeAll: vi.fn().mockResolvedValue(undefined),
   };
   const jwt = { signAsync: vi.fn().mockResolvedValue('access.jwt') };
   const config = {
     get: (key: string) =>
       ({
         JWT_ACCESS_SECRET: 'secret',
-        JWT_ACCESS_TTL: '15m',
-        JWT_REFRESH_TTL: '30d',
+        JWT_ACCESS_TTL: '7d',
         APP_WEB_URL: 'http://localhost:5173',
       })[key],
   };
@@ -56,14 +54,10 @@ const baseUser = (over: Partial<FakeUser> = {}): FakeUser => ({
 });
 
 describe('AuthService.login', () => {
-  it('issues tokens for a verified user with the right password', async () => {
+  it('issues an access token for a verified user with the right password', async () => {
     const { service } = makeService(baseUser());
     const result = await service.login({ email: 'p@example.com', password: 'correct-horse' });
-    expect(result).toEqual({
-      accessToken: 'access.jwt',
-      refreshToken: 'refresh-raw',
-      expiresIn: 900,
-    });
+    expect(result).toEqual({ accessToken: 'access.jwt', expiresIn: 604800 });
   });
 
   it('rejects a wrong password with a generic error', async () => {
@@ -103,7 +97,7 @@ describe('AuthService.register', () => {
     expect(tokens.issue).toHaveBeenCalledWith('new-user', 'EMAIL_VERIFY', expect.any(Number));
     expect(mail.sendVerificationEmail).toHaveBeenCalledWith(
       'new@example.com',
-      expect.stringContaining('http://localhost:5173/verify?token=refresh-raw'),
+      expect.stringContaining('http://localhost:5173/verify?token=token-raw'),
     );
   });
 });

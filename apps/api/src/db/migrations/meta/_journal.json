@@ -29,6 +29,13 @@
       "when": 1788802435541,
       "tag": "0003_doctor_favorite_medicines",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788802435542,
+      "tag": "0004_drop_refresh_token_kind",
+      "breakpoints": true
     }
   ]
 }

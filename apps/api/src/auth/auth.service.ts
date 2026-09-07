@@ -90,25 +90,7 @@ export class AuthService {
     if (!user.emailVerifiedAt) {
       throw new ForbiddenException('email not verified');
     }
-    return this.issueTokens(user.id, user.role);
-  }
-
-  async refresh(refreshToken: string): Promise<AuthTokens> {
-    const userId = await this.tokens.consume(refreshToken, 'REFRESH');
-    if (!userId) throw new UnauthorizedException('invalid refresh token');
-
-    const user = await this.db.query.users.findFirst({
-      where: eq(users.id, userId),
-      columns: { id: true, role: true, disabledAt: true },
-    });
-    if (!user || user.disabledAt) throw new UnauthorizedException('account unavailable');
-
-    return this.issueTokens(user.id, user.role);
-  }
-
-  async logout(refreshToken: string): Promise<{ ok: true }> {
-    await this.tokens.consume(refreshToken, 'REFRESH');
-    return { ok: true };
+    return this.issueAccessToken(user.id, user.role);
   }
 
   async forgotPassword(input: ForgotPasswordInput): Promise<{ ok: true }> {
@@ -130,11 +112,10 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(input.password, BCRYPT_ROUNDS);
     await this.db.update(users).set({ passwordHash }).where(eq(users.id, userId));
-    await this.tokens.revokeAll(userId, 'REFRESH');
     return { ok: true };
   }
 
-  private async issueTokens(userId: string, role: UserRole): Promise<AuthTokens> {
+  private async issueAccessToken(userId: string, role: UserRole): Promise<AuthTokens> {
     const accessTtl = this.config.get('JWT_ACCESS_TTL', { infer: true });
     const accessToken = await this.jwt.signAsync(
       { sub: userId, role },
@@ -143,12 +124,7 @@ export class AuthService {
         expiresIn: accessTtl,
       },
     );
-    const refreshToken = await this.tokens.issue(
-      userId,
-      'REFRESH',
-      durationToMs(this.config.get('JWT_REFRESH_TTL', { infer: true })),
-    );
-    return { accessToken, refreshToken, expiresIn: durationToSeconds(accessTtl) };
+    return { accessToken, expiresIn: durationToSeconds(accessTtl) };
   }
 
   private webUrl(): string {

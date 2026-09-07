@@ -5,7 +5,7 @@ import { DB } from '../db/db.module';
 import type { Database } from '../db';
 import { authTokens } from '../db/schema';
 
-export type AuthTokenKind = 'EMAIL_VERIFY' | 'PASSWORD_RESET' | 'REFRESH';
+export type AuthTokenKind = 'EMAIL_VERIFY' | 'PASSWORD_RESET';
 
 const sha256 = (value: string): string => createHash('sha256').update(value).digest('hex');
 
@@ -48,13 +48,5 @@ export class TokenService {
       .set({ consumedAt: new Date() })
       .where(eq(authTokens.id, row.id));
     return row.userId;
-  }
-
-  /** Invalidates every outstanding token of a kind for a user (e.g. all refresh tokens on password reset). */
-  async revokeAll(userId: string, kind: AuthTokenKind): Promise<void> {
-    await this.db
-      .update(authTokens)
-      .set({ consumedAt: new Date() })
-      .where(and(eq(authTokens.userId, userId), eq(authTokens.kind, kind), isNull(authTokens.consumedAt)));
   }
 }

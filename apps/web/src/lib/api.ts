@@ -1,5 +1,5 @@
 import { API_PREFIX } from '@carelink/shared';
-import axios, { type InternalAxiosRequestConfig } from 'axios';
+import axios from 'axios';
 
 // Empty (the default) means "same origin" — requests go to `/api/…` and, in dev,
 // Vite proxies them to the API. Set VITE_API_URL to an absolute URL to override.
@@ -18,32 +18,8 @@ export const api = axios.create({
   withXSRFToken: true,
 });
 
-const hasSession = () => /(?:^|;\s*)carelink_csrf=/.test(document.cookie);
-
-let refreshing: Promise<boolean> | null = null;
-
-api.interceptors.response.use(
-  (res) => res,
-  async (error: unknown) => {
-    if (!axios.isAxiosError(error) || !error.config) throw error;
-
-    const cfg = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
-    const isRefresh = cfg.url?.includes('/auth/refresh');
-
-    if (error.response?.status === 401 && !cfg._retry && !isRefresh && hasSession()) {
-      cfg._retry = true;
-      refreshing ??= api
-        .post('/auth/refresh', {})
-        .then(() => true)
-        .catch(() => false)
-        .finally(() => {
-          refreshing = null;
-        });
-      if (await refreshing) return api(cfg);
-    }
-    throw error;
-  },
-);
+// Single 7-day access cookie, no refresh. A 401 means the session is gone —
+// callers surface it and ProtectedRoute bounces to /login on the next /me.
 
 /** Thin helper for call sites that just want the response body. */
 export async function apiGet<T>(url: string, params?: Record<string, unknown>): Promise<T> {

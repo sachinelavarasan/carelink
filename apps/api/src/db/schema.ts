@@ -45,13 +45,9 @@ export const users = pgTable(
   }),
 );
 
-export const authTokenKind = pgEnum('auth_token_kind', [
-  'EMAIL_VERIFY',
-  'PASSWORD_RESET',
-  'REFRESH',
-]);
+export const authTokenKind = pgEnum('auth_token_kind', ['EMAIL_VERIFY', 'PASSWORD_RESET']);
 
-/** One row per issued email-verification / password-reset / refresh token.
+/** One row per issued email-verification / password-reset token.
  *  Only the SHA-256 hash of the token is stored. */
 export const authTokens = pgTable(
   'auth_tokens',

@@ -10,7 +10,7 @@ import { AuditService } from './audit.service';
 
 const MUTATING = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 /** High-frequency, zero investigative value — kept out of the audit table. */
-const SKIP_ACTIONS = new Set(['POST /api/v1/auth/refresh']);
+const SKIP_ACTIONS = new Set<string>();
 
 interface AuditRequest {
   method: string;
