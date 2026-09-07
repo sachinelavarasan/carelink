@@ -113,7 +113,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   ) {
     const url = `cloudinary://${CLOUDINARY_API_KEY}:${CLOUDINARY_API_SECRET}@${CLOUDINARY_CLOUD_NAME}`;
     cleaned.CLOUDINARY_URL = url;
-    process.env.CLOUDINARY_URL ??= url;
+    // Overwrite unconditionally: a copied .env often carries CLOUDINARY_URL="" ,
+    // which is not nullish, so `??=` would leave the SDK with an empty string.
+    process.env.CLOUDINARY_URL = url;
   }
 
   const parsed = envSchema.safeParse(cleaned);
