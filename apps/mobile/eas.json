@@ -13,7 +13,6 @@
     },
     "preview": {
       "channel": "staging",
-      "distribution": "internal",
       "android": {
         "buildType": "apk"
       },
@@ -22,11 +21,31 @@
         "EXPO_PUBLIC_API_URL": "https://carelink-backend-two.vercel.app"
       }
     },
+    "preview2": {
+      "android": {
+        "gradleCommand": ":app:assembleRelease"
+      },
+      "env": {
+        "APP_VARIANT": "development"
+      }
+    },
+    "preview3": {
+      "developmentClient": true,
+      "env": {
+        "APP_VARIANT": "development"
+      }
+    },
+    "preview4": {
+      "channel": "staging",
+      "distribution": "internal",
+      "env": {
+        "APP_VARIANT": "development"
+      }
+    },
     "production": {
       "channel": "production",
       "autoIncrement": true,
       "android": {
-        "buildType": "app-bundle",
         "image": "latest",
         "resourceClass": "large"
       },
@@ -34,10 +53,44 @@
         "APP_VARIANT": "production",
         "EXPO_PUBLIC_API_URL": "https://carelink-backend-two.vercel.app"
       }
+    },
+    "previewInternal": {
+      "channel": "staging",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "APP_VARIANT": "production",
+        "EXPO_PUBLIC_API_URL": "https://carelink-backend-two.vercel.app"
+      }
+    },
+    "devInternal": {
+      "channel": "staging",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "APP_VARIANT": "development",
+        "EXPO_PUBLIC_API_URL": "https://carelink-backend-two.vercel.app"
+      }
     }
   },
   "submit": {
     "production": {
+      "android": {
+        "serviceAccountKeyPath": "./play-console-services.json",
+        "track": "internal"
+      }
+    },
+     "previewInternal": {
+      "android": {
+        "serviceAccountKeyPath": "./play-console-services.json",
+        "track": "internal"
+      }
+    },
+    "devInternal": {
       "android": {
         "serviceAccountKeyPath": "./play-console-services.json",
         "track": "internal"
