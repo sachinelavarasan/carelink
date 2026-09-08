@@ -5,14 +5,16 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
-import { eq, or } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, or } from 'drizzle-orm';
 import type {
   AvatarResult,
   DoctorProfileInput,
   DoctorProfileOut,
   Me,
+  PatientDataExport,
   PatientProfileInput,
   PatientProfileOut,
+  UpdateAccountInput,
 } from '@carelink/shared';
 import { DB } from '../db/db.module';
 import type { Database } from '../db';
@@ -57,6 +59,7 @@ export class UsersService {
         avatarUrl: user.avatarUrl,
         emailVerified: user.emailVerifiedAt !== null,
         createdAt: user.createdAt.toISOString(),
+        updatedAt: user.updatedAt.toISOString(),
       },
       patientProfile: patient ? this.toPatientOut(patient) : null,
       doctorProfile: doctor ? this.toDoctorOut(doctor) : null,
@@ -95,6 +98,120 @@ export class UsersService {
     });
 
     return { ok: true };
+  }
+
+  /**
+   * DPDP right to access — everything CareLink holds about this patient, as a
+   * plain object the controller streams as a JSON download. Read-only; the
+   * doctor-only `notes` on a prescription are never included, matching the rest
+   * of the patient-facing contract.
+   */
+  async exportPatientData(userId: string): Promise<PatientDataExport> {
+    const user = await this.db.query.users.findFirst({ where: eq(users.id, userId) });
+    if (!user) throw new NotFoundException('user not found');
+
+    const [profile, apptRows, rxRows, msgRows, docRows] = await Promise.all([
+      this.db.query.patientProfiles.findFirst({ where: eq(patientProfiles.userId, userId) }),
+      this.db
+        .select({ appt: appointments, doctorName: users.fullName })
+        .from(appointments)
+        .innerJoin(users, eq(users.id, appointments.doctorId))
+        .where(eq(appointments.patientId, userId))
+        .orderBy(desc(appointments.scheduledStart)),
+      this.db.query.prescriptions.findMany({
+        where: and(eq(prescriptions.patientId, userId), isNotNull(prescriptions.finalizedAt)),
+        with: { items: true },
+        orderBy: (p, { desc: d }) => [d(p.issuedAt)],
+      }),
+      this.db
+        .select()
+        .from(messages)
+        .where(eq(messages.senderId, userId))
+        .orderBy(desc(messages.sentAt)),
+      this.db
+        .select()
+        .from(medicalDocuments)
+        .where(eq(medicalDocuments.patientId, userId))
+        .orderBy(desc(medicalDocuments.uploadedAt)),
+    ]);
+
+    return {
+      exportedAt: new Date().toISOString(),
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        phone: user.phone,
+        role: user.role,
+        emailVerified: user.emailVerifiedAt !== null,
+        avatarUrl: user.avatarUrl,
+        createdAt: user.createdAt.toISOString(),
+      },
+      patientProfile: profile ? this.toPatientOut(profile) : null,
+      appointments: apptRows.map(({ appt, doctorName }) => ({
+        id: appt.id,
+        patientId: appt.patientId,
+        doctorId: appt.doctorId,
+        scheduledStart: appt.scheduledStart.toISOString(),
+        scheduledEnd: appt.scheduledEnd.toISOString(),
+        status: appt.status,
+        reasonForVisit: appt.reasonForVisit,
+        consentAcceptedAt: appt.consentAcceptedAt ? appt.consentAcceptedAt.toISOString() : null,
+        identityVerifiedAt: appt.identityVerifiedAt ? appt.identityVerifiedAt.toISOString() : null,
+        cancelledBy: appt.cancelledBy ?? null,
+        cancelReason: appt.cancelReason ?? null,
+        createdAt: appt.createdAt.toISOString(),
+        doctorName,
+      })),
+      prescriptions: rxRows.map((rx) => ({
+        id: rx.id,
+        appointmentId: rx.appointmentId,
+        issuedAt: rx.issuedAt.toISOString(),
+        finalizedAt: rx.finalizedAt ? rx.finalizedAt.toISOString() : null,
+        symptoms: rx.symptoms ?? null,
+        diagnosis: rx.diagnosis,
+        advice: rx.advice ?? null,
+        followUpDate: rx.followUpDate ?? null,
+        drugCategoryFlags: rx.drugCategoryFlags,
+        items: [...rx.items]
+          .sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))
+          .map((it) => ({
+            id: it.id,
+            drugName: it.drugName,
+            strength: it.strength ?? undefined,
+            form: it.form ?? undefined,
+            frequency: it.frequency,
+            durationDays: it.durationDays,
+            instructions: it.instructions ?? undefined,
+          })),
+      })),
+      messages: msgRows.map((m) => ({
+        id: m.id,
+        threadId: m.threadId,
+        senderId: m.senderId,
+        body: m.body,
+        attachmentKey: m.attachmentKey ?? null,
+        sentAt: m.sentAt.toISOString(),
+        readAt: m.readAt ? m.readAt.toISOString() : null,
+      })),
+      documents: docRows.map((d) => ({
+        id: d.id,
+        kind: d.kind,
+        title: d.title,
+        uploadedAt: d.uploadedAt.toISOString(),
+      })),
+    };
+  }
+
+  /** Update the account's own display name / phone. */
+  async updateAccount(userId: string, input: UpdateAccountInput): Promise<Me> {
+    const [row] = await this.db
+      .update(users)
+      .set({ fullName: input.fullName, phone: input.phone ?? null, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning({ id: users.id });
+    if (!row) throw new NotFoundException('user not found');
+    return this.getMe(userId);
   }
 
   /** Uploads a new avatar to storage and points the user row at its URL. */

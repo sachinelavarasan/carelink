@@ -48,6 +48,24 @@ export async function openPdf(path: string): Promise<void> {
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
+/**
+ * Fetches a file through the authenticated client and saves it via a synthetic
+ * `<a download>`. Uses the response's `Content-Disposition` filename when present.
+ */
+export async function downloadFile(path: string, fallbackName: string): Promise<void> {
+  const res = await api.get<Blob>(path, { responseType: 'blob' });
+  const disposition = String(res.headers['content-disposition'] ?? '');
+  const name = /filename="?([^"]+)"?/.exec(disposition)?.[1] ?? fallbackName;
+  const url = URL.createObjectURL(res.data);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
 /** Best-effort human message from an axios/unknown error. */
 export function errMessage(err: unknown, fallback: string): string {
   if (axios.isAxiosError(err)) {

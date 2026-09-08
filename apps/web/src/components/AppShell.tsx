@@ -43,6 +43,11 @@ export function AppShell({ children }: { children: ReactNode }) {
               My doctors
             </NavLink>
           )}
+          {!isDoctor && (
+            <NavLink to="/vitals" className={navLink}>
+              Vitals
+            </NavLink>
+          )}
           {isDoctor && (
             <NavLink to="/patients" className={navLink}>
               Patients
@@ -51,6 +56,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           {isDoctor && (
             <NavLink to="/availability" className={navLink}>
               Availability
+            </NavLink>
+          )}
+          {isDoctor && (
+            <NavLink to="/prescription-templates" className={navLink}>
+              Templates
             </NavLink>
           )}
         </nav>

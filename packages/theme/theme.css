@@ -47,47 +47,50 @@
 }
 
 .dark {
-  --background: #0b171b;
-  --foreground: #ecfeff;
+  --background: #0c1b20;
+  --foreground: #e8f6f9;
 
-  --card: #102126;
-  --card-foreground: #ecfeff;
+  --card: #15272d;
+  --card-foreground: #e8f6f9;
 
-  --popover: #102126;
-  --popover-foreground: #ecfeff;
+  --popover: #182d34;
+  --popover-foreground: #e8f6f9;
 
   --primary: #22d3ee;
-  --primary-foreground: #083344;
+  --primary-foreground: #06272f;
 
-  --secondary: #1b2a30;
+  --secondary: #20353c;
   --secondary-foreground: #e2e8f0;
 
-  --muted: #1b2a30;
-  --muted-foreground: #94a3b8;
+  --muted: #20353c;
+  --muted-foreground: #a6bcc3;
 
-  --accent: #083344;
-  --accent-foreground: #67e8f9;
+  --accent: #0e3b49;
+  --accent-foreground: #7ceaf7;
 
-  --border: #334155;
-  --input: #334155;
-  --ring: #67e8f9;
+  /* `--input` is deliberately lighter than `--border`: the Input component uses
+     it for both the field outline and the `bg-input/30` fill, so it needs to
+     clear ~3:1 against the card on its own. */
+  --border: #35525d;
+  --input: #55747f;
+  --ring: #34d3ee;
 
   --destructive: #f87171;
   --destructive-foreground: #2a1215;
 
-  --success-bg: #052e16;
-  --success-fg: #4ade80;
-  --success-border: #166534;
+  --success-bg: #06301a;
+  --success-fg: #56d98a;
+  --success-border: #1c6b3f;
 
-  --warning-bg: #422006;
-  --warning-fg: #fbbf24;
-  --warning-border: #92400e;
+  --warning-bg: #3f2308;
+  --warning-fg: #fcc352;
+  --warning-border: #9a5215;
 
-  --danger-bg: #450a0a;
-  --danger-fg: #f87171;
-  --danger-border: #991b1b;
+  --danger-bg: #451212;
+  --danger-fg: #fb8686;
+  --danger-border: #a12626;
 
-  --info-bg: #083344;
+  --info-bg: #0c3b49;
   --info-fg: #67e8f9;
-  --info-border: #155e75;
+  --info-border: #1d6377;
 }

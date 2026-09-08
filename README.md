@@ -53,7 +53,10 @@ npm run seed:run --workspace @carelink/api
 
 `/api/v1/auth`: `POST register`, `GET verify?token=`, `POST login`, `POST refresh`,
 `POST logout`, `POST forgot`, `POST reset`, `POST resend-verification`. Authed
-routes: `GET /me`, `PUT /me/patient-profile`, `PUT /me/doctor-profile` (doctor only).
+routes: `GET /me`, `PATCH /me` (own name / phone), `PUT /me/patient-profile`,
+`PUT /me/doctor-profile` (doctor only), `GET /me/export` (patient — full personal
+record as a JSON download, DPDP right to access), `DELETE /me` (patient — DPDP
+hard delete). `me.user` carries `createdAt` + `updatedAt`.
 
 Token transport:
 
@@ -69,10 +72,21 @@ With SMTP unset, verification/reset links print to the API console.
 
 - `GET /doctors`, `GET /doctors/:id`, `GET /doctors/:id/slots?from=YYYY-MM-DD&to=…`
 - Doctor: `GET/PUT /me/availability/rules` (weekly template, replace-all),
-  `GET/PUT/DELETE /me/availability/exceptions` (date overrides)
+  `GET/PUT/DELETE /me/availability/exceptions` (date overrides),
+  `PUT/DELETE /me/availability/exceptions/range?from&to` (holiday / leave block —
+  one exception row per date, ≤ 90 days)
 - `POST /appointments` `{ doctorId, scheduledStart, reasonForVisit, consentAccepted:true }`,
   `GET /appointments?scope=upcoming|past|all`, `GET /appointments/:id`,
   `POST /appointments/:id/{cancel,reschedule,verify-identity}`
+- `GET/PUT /appointments/:id/intake` — the patient's short pre-consultation
+  questionnaire (chief complaint, onset, severity, meds, allergies, notes); patient
+  writes it up to the consult, doctor reads it
+- `GET/POST /me/vitals`, `DELETE /me/vitals/:id` — the patient's self-logged vital
+  signs (weight, BP, heart rate, blood sugar, temperature) over time;
+  `GET /patients/:id/vitals` lets a doctor read them for a patient they've seen
+- `GET/POST/PATCH/DELETE /me/prescription-templates[/:id]` (doctor) — reusable
+  prescription skeletons (name, symptoms, diagnosis, advice, medicines, follow-up
+  offset) applied into a draft in one click
 - `POST /me/push-tokens` `{ token, platform }`
 - `POST /jobs/run` (header `x-cron-secret: $CRON_SECRET`) — sends due reminders +
   pings the DB. Fired by `.github/workflows/cron.yml` every 5 min.

@@ -1,11 +1,15 @@
 import { Body, Controller, Delete, Get, Param, Put, Query, UseGuards } from '@nestjs/common';
 import {
+  availabilityExceptionRangeQuerySchema,
+  availabilityExceptionRangeSchema,
   availabilityExceptionSchema,
   listDoctorsQuerySchema,
   replaceAvailabilityRulesSchema,
   slotQuerySchema,
   type AvailabilityExceptionInput,
   type AvailabilityExceptionOut,
+  type AvailabilityExceptionRangeInput,
+  type AvailabilityExceptionRangeQuery,
   type AvailabilityRuleOut,
   type DoctorPublic,
   type ListDoctorsQuery,
@@ -95,6 +99,28 @@ export class AvailabilityController {
     @Body(new ZodValidationPipe(availabilityExceptionSchema)) body: AvailabilityExceptionInput,
   ): Promise<AvailabilityExceptionOut> {
     return this.availability.upsertException(user.id, body);
+  }
+
+  /** Close (or set hours for) a whole date range in one call — a holiday / leave block. */
+  @Put('me/availability/exceptions/range')
+  @Roles('DOCTOR')
+  upsertExceptionRange(
+    @CurrentUser() user: AuthUser,
+    @Body(new ZodValidationPipe(availabilityExceptionRangeSchema))
+    body: AvailabilityExceptionRangeInput,
+  ): Promise<AvailabilityExceptionOut[]> {
+    return this.availability.upsertExceptionRange(user.id, body);
+  }
+
+  @Delete('me/availability/exceptions/range')
+  @Roles('DOCTOR')
+  async deleteExceptionRange(
+    @CurrentUser() user: AuthUser,
+    @Query(new ZodValidationPipe(availabilityExceptionRangeQuerySchema))
+    query: AvailabilityExceptionRangeQuery,
+  ): Promise<{ ok: true }> {
+    await this.availability.deleteExceptionRange(user.id, query.from, query.to);
+    return { ok: true };
   }
 
   @Delete('me/availability/exceptions/:id')

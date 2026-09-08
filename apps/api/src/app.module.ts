@@ -12,6 +12,7 @@ import { AvailabilityModule } from './availability/availability.module';
 import { loadConfig } from './config';
 import { DbModule } from './db/db.module';
 import { HealthModule } from './health/health.module';
+import { IntakeModule } from './intake/intake.module';
 import { JobsModule } from './jobs/jobs.module';
 import { MailModule } from './mail/mail.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -20,6 +21,7 @@ import { RootModule } from './root/root.module';
 import { StorageModule } from './storage/storage.module';
 import { UsersModule } from './users/users.module';
 import { VideoModule } from './video/video.module';
+import { VitalsModule } from './vitals/vitals.module';
 import { CommonModule } from './common/common.module';
 
 @Module({
@@ -40,6 +42,8 @@ import { CommonModule } from './common/common.module';
     UsersModule,
     AvailabilityModule,
     AppointmentsModule,
+    IntakeModule,
+    VitalsModule,
     // ChatModule, // hidden for now
     VideoModule,
     PrescriptionsModule,

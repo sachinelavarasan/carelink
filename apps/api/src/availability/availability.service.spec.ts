@@ -1,3 +1,4 @@
+import { ForbiddenException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import type { Database } from '../db';
 import { AvailabilityService } from './availability.service';
@@ -108,5 +109,84 @@ describe('AvailabilityService.visitedDoctors', () => {
   it('returns nothing when the patient has no appointments', async () => {
     const s = service(vi.fn().mockReturnValue(chain([])));
     expect(await s.visitedDoctors('patient-1')).toEqual([]);
+  });
+});
+
+describe('AvailabilityService exception ranges (time off)', () => {
+  function rangeService(exceptionRows: unknown[] = []) {
+    const values = vi.fn().mockResolvedValue(undefined);
+    const txInsert = vi.fn().mockReturnValue({ values });
+    const txDelete = vi.fn().mockReturnValue({ where: () => Promise.resolve(undefined) });
+    const topDelete = vi.fn().mockReturnValue({ where: () => Promise.resolve(undefined) });
+    const tx = { insert: txInsert, delete: txDelete };
+    const db = {
+      query: { doctorProfiles: { findFirst: vi.fn().mockResolvedValue({ id: 'prof-1' }) } },
+      select: () => chain(exceptionRows),
+      delete: topDelete,
+      transaction: (fn: (t: typeof tx) => Promise<unknown>) => fn(tx),
+    };
+    const s = new AvailabilityService({ db } as unknown as Database);
+    return { s, values, txDelete, topDelete };
+  }
+
+  it('replaces the range with one closed row per date, then returns the list', async () => {
+    const { s, values, txDelete } = rangeService([
+      { id: 'e1', date: '2026-03-02', isClosed: true, startTime: null, endTime: null },
+    ]);
+    const out = await s.upsertExceptionRange('doc-user', {
+      from: '2026-03-02',
+      to: '2026-03-04',
+      isClosed: true,
+    });
+
+    expect(txDelete).toHaveBeenCalledOnce();
+    const rows = values.mock.calls[0][0] as Array<Record<string, unknown>>;
+    expect(rows.map((r) => r.date)).toEqual(['2026-03-02', '2026-03-03', '2026-03-04']);
+    expect(rows.every((r) => r.isClosed === true && r.startTime === null)).toBe(true);
+    expect(rows.every((r) => r.doctorId === 'prof-1')).toBe(true);
+    expect(out).toEqual([{ id: 'e1', date: '2026-03-02', isClosed: true }]);
+  });
+
+  it('rejects a range wider than 90 days', async () => {
+    const { s } = rangeService();
+    await expect(
+      s.upsertExceptionRange('doc-user', { from: '2026-01-01', to: '2026-06-01', isClosed: true }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('rejects custom hours without both start and end', async () => {
+    const { s } = rangeService();
+    await expect(
+      s.upsertExceptionRange('doc-user', {
+        from: '2026-03-02',
+        to: '2026-03-03',
+        isClosed: false,
+        startTime: '10:00',
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('writes custom hours across the range when both times are given', async () => {
+    const { s, values } = rangeService([]);
+    await s.upsertExceptionRange('doc-user', {
+      from: '2026-03-02',
+      to: '2026-03-03',
+      isClosed: false,
+      startTime: '10:00',
+      endTime: '14:00',
+    });
+    const rows = values.mock.calls[0][0] as Array<Record<string, unknown>>;
+    expect(rows).toHaveLength(2);
+    expect(rows.every((r) => r.startTime === '10:00' && r.endTime === '14:00')).toBe(true);
+  });
+
+  it('deleteExceptionRange rejects an inverted range and clears a valid one', async () => {
+    const { s, topDelete } = rangeService();
+    await expect(
+      s.deleteExceptionRange('doc-user', '2026-03-05', '2026-03-01'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+
+    await s.deleteExceptionRange('doc-user', '2026-03-01', '2026-03-05');
+    expect(topDelete).toHaveBeenCalledOnce();
   });
 });

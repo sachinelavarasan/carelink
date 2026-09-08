@@ -25,6 +25,7 @@ export const appointmentStatus = pgEnum('appointment_status', [
 ]);
 export const documentKind = pgEnum('document_kind', ['LAB_REPORT', 'SCAN', 'OTHER']);
 export const notificationChannel = pgEnum('notification_channel', ['PUSH', 'EMAIL']);
+export const intakeSeverity = pgEnum('intake_severity', ['MILD', 'MODERATE', 'SEVERE']);
 
 export const users = pgTable(
   'users',
@@ -38,6 +39,7 @@ export const users = pgTable(
     fullName: text('full_name').notNull(),
     avatarUrl: text('avatar_url'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     disabledAt: timestamp('disabled_at', { withTimezone: true }),
   },
   (t) => ({
@@ -168,6 +170,24 @@ export const appointments = pgTable(
   }),
 );
 
+/** The patient's short pre-consultation questionnaire for one appointment
+ *  (1:1). Filled and edited by the patient up to the consult; the doctor reads
+ *  it when writing the record. */
+export const appointmentIntakes = pgTable('appointment_intakes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  appointmentId: uuid('appointment_id')
+    .notNull()
+    .unique()
+    .references(() => appointments.id, { onDelete: 'cascade' }),
+  chiefComplaint: text('chief_complaint').notNull(),
+  symptomsStarted: text('symptoms_started'), // free text, e.g. "3 days ago"
+  severity: intakeSeverity('severity'),
+  currentMedications: text('current_medications'),
+  allergies: text('allergies'),
+  additionalNotes: text('additional_notes'),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const chatThreads = pgTable('chat_threads', {
   id: uuid('id').primaryKey().defaultRandom(),
   appointmentId: uuid('appointment_id')
@@ -233,6 +253,42 @@ export const prescriptions = pgTable('prescriptions', {
   drugCategoryFlags: text('drug_category_flags').array().notNull().default([]),
 });
 
+/** A doctor's reusable prescription skeleton — name plus the fields they drop
+ *  into a new prescription in one click. Not linked to any appointment. */
+export const prescriptionTemplates = pgTable(
+  'prescription_templates',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    doctorId: uuid('doctor_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    symptoms: text('symptoms'),
+    diagnosis: text('diagnosis'),
+    advice: text('advice'),
+    followUpDays: integer('follow_up_days'), // offset from issue date, applied when the template is used
+    drugCategoryFlags: text('drug_category_flags').array().notNull().default([]),
+    items: jsonb('items')
+      .notNull()
+      .default([])
+      .$type<
+        {
+          drugName: string;
+          strength?: string;
+          form?: string;
+          frequency: string;
+          durationDays: number;
+          instructions?: string;
+        }[]
+      >(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    byDoctor: index('prescription_templates_doctor_idx').on(t.doctorId),
+  }),
+);
+
 export const prescriptionItems = pgTable('prescription_items', {
   id: uuid('id').primaryKey().defaultRandom(),
   prescriptionId: uuid('prescription_id')
@@ -264,6 +320,30 @@ export const medicalDocuments = pgTable(
   },
   (t) => ({
     byPatientUploaded: index('medical_documents_patient_uploaded_idx').on(t.patientId, t.uploadedAt),
+  }),
+);
+
+/** A patient's self-recorded vital signs over time. One row = one reading
+ *  session; every measurement column is optional but a row has at least one. */
+export const patientVitals = pgTable(
+  'patient_vitals',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    patientId: uuid('patient_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull().defaultNow(),
+    weightKg: doublePrecision('weight_kg'),
+    systolic: integer('systolic'), // blood pressure, mmHg
+    diastolic: integer('diastolic'),
+    heartRate: integer('heart_rate'), // bpm
+    bloodSugarMgDl: doublePrecision('blood_sugar_mg_dl'),
+    temperatureC: doublePrecision('temperature_c'),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    byPatientRecorded: index('patient_vitals_patient_recorded_idx').on(t.patientId, t.recordedAt),
   }),
 );
 
@@ -351,6 +431,10 @@ export const appointmentsRelations = relations(appointments, ({ one }) => ({
     fields: [appointments.id],
     references: [chatThreads.appointmentId],
   }),
+  intake: one(appointmentIntakes, {
+    fields: [appointments.id],
+    references: [appointmentIntakes.appointmentId],
+  }),
   videoSession: one(videoSessions, {
     fields: [appointments.id],
     references: [videoSessions.appointmentId],
@@ -403,11 +487,14 @@ export type DbSchema = {
   availabilityRules: typeof availabilityRules;
   availabilityExceptions: typeof availabilityExceptions;
   appointments: typeof appointments;
+  appointmentIntakes: typeof appointmentIntakes;
+  patientVitals: typeof patientVitals;
   chatThreads: typeof chatThreads;
   videoSessions: typeof videoSessions;
   messages: typeof messages;
   prescriptions: typeof prescriptions;
   prescriptionItems: typeof prescriptionItems;
+  prescriptionTemplates: typeof prescriptionTemplates;
   medicalDocuments: typeof medicalDocuments;
   notifications: typeof notifications;
   pushTokens: typeof pushTokens;

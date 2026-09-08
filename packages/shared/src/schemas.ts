@@ -3,6 +3,7 @@ import {
   AppointmentStatus,
   DocumentKind,
   DrugCategoryFlag,
+  IntakeSeverity,
   UserRole,
 } from './enums';
 
@@ -45,6 +46,13 @@ export const registerSchema = z.object({
   fullName: z.string().trim().min(2).max(120),
 });
 export type RegisterInput = z.infer<typeof registerSchema>;
+
+/** Edit the account's own name / phone (`PATCH /me`). */
+export const updateAccountSchema = z.object({
+  fullName: z.string().trim().min(2).max(120),
+  phone: z.string().trim().max(20).optional(),
+});
+export type UpdateAccountInput = z.infer<typeof updateAccountSchema>;
 
 export const loginSchema = z.object({
   email: emailField,
@@ -122,6 +130,25 @@ export const availabilityExceptionSchema = z.object({
   endTime: hhmm.optional(),
 });
 export type AvailabilityExceptionInput = z.infer<typeof availabilityExceptionSchema>;
+
+/** Close (or set custom hours for) every date in an inclusive range — a
+ *  holiday / leave block. The API expands it to one exception row per date. */
+export const availabilityExceptionRangeSchema = z
+  .object({
+    from: z.string().date(),
+    to: z.string().date(),
+    isClosed: z.boolean().default(true),
+    startTime: hhmm.optional(),
+    endTime: hhmm.optional(),
+  })
+  .refine((v) => v.to >= v.from, { message: '`to` must be on or after `from`', path: ['to'] });
+export type AvailabilityExceptionRangeInput = z.infer<typeof availabilityExceptionRangeSchema>;
+
+/** Query for clearing a whole block of date overrides at once. */
+export const availabilityExceptionRangeQuerySchema = z
+  .object({ from: z.string().date(), to: z.string().date() })
+  .refine((v) => v.to >= v.from, { message: '`to` must be on or after `from`', path: ['to'] });
+export type AvailabilityExceptionRangeQuery = z.infer<typeof availabilityExceptionRangeQuerySchema>;
 
 export const slotSchema = z.object({
   start: isoDate,
@@ -274,6 +301,67 @@ export const appointmentSummarySchema = z.object({
 });
 export type AppointmentSummary = z.infer<typeof appointmentSummarySchema>;
 
+/* ---------------------------------------------------- pre-consultation intake */
+
+/** The patient's short questionnaire attached to an appointment. All fields but
+ *  the chief complaint are optional; the patient edits it up to the consult. */
+export const appointmentIntakeSchema = z.object({
+  chiefComplaint: z.string().trim().min(3).max(1000),
+  symptomsStarted: z.string().trim().max(200).optional(),
+  severity: z.nativeEnum(IntakeSeverity).optional(),
+  currentMedications: z.string().trim().max(2000).optional(),
+  allergies: z.string().trim().max(1000).optional(),
+  additionalNotes: z.string().trim().max(2000).optional(),
+});
+export type AppointmentIntakeInput = z.infer<typeof appointmentIntakeSchema>;
+
+export const appointmentIntakeViewSchema = appointmentIntakeSchema.extend({
+  appointmentId: cuid,
+  updatedAt: isoDate,
+});
+export type AppointmentIntakeView = z.infer<typeof appointmentIntakeViewSchema>;
+
+/* ------------------------------------------------------------------- vitals */
+
+/** The measurement fields on a vitals reading — at least one must be present. */
+const vitalMeasurements = {
+  weightKg: z.number().positive().max(500).optional(),
+  systolic: z.number().int().min(40).max(300).optional(),
+  diastolic: z.number().int().min(20).max(200).optional(),
+  heartRate: z.number().int().min(20).max(300).optional(),
+  bloodSugarMgDl: z.number().positive().max(2000).optional(),
+  temperatureC: z.number().min(30).max(45).optional(),
+};
+const VITAL_KEYS = Object.keys(vitalMeasurements) as (keyof typeof vitalMeasurements)[];
+
+export const vitalEntrySchema = z
+  .object({
+    ...vitalMeasurements,
+    recordedAt: isoDate.optional(), // defaults to "now" on the server
+    notes: z.string().trim().max(500).optional(),
+  })
+  .refine((v) => VITAL_KEYS.some((k) => v[k] != null), {
+    message: 'record at least one measurement',
+  });
+export type VitalEntryInput = z.infer<typeof vitalEntrySchema>;
+
+export const vitalSchema = z.object({
+  id: cuid,
+  recordedAt: isoDate,
+  weightKg: z.number().nullable(),
+  systolic: z.number().int().nullable(),
+  diastolic: z.number().int().nullable(),
+  heartRate: z.number().int().nullable(),
+  bloodSugarMgDl: z.number().nullable(),
+  temperatureC: z.number().nullable(),
+  notes: z.string().nullable(),
+  createdAt: isoDate,
+});
+export type Vital = z.infer<typeof vitalSchema>;
+
+export const vitalsListSchema = z.object({ items: z.array(vitalSchema) });
+export type VitalsList = z.infer<typeof vitalsListSchema>;
+
 /* --------------------------------------------------------------- push tokens */
 
 export const registerPushTokenSchema = z.object({
@@ -391,6 +479,28 @@ export type CreatePrescriptionInput = z.infer<typeof createPrescriptionSchema>;
 export const updatePrescriptionSchema = prescriptionBodySchema;
 export type UpdatePrescriptionInput = z.infer<typeof updatePrescriptionSchema>;
 
+/* ---------------------------------------------------- prescription templates */
+
+/** A doctor's reusable prescription skeleton. Every clinical field is optional —
+ *  a template can be just a name + a medicine list, or a full draft. */
+export const prescriptionTemplateBodySchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  symptoms: z.string().trim().max(2000).optional(),
+  diagnosis: z.string().trim().max(2000).optional(),
+  advice: z.string().trim().max(4000).optional(),
+  followUpDays: z.number().int().min(1).max(365).optional(),
+  drugCategoryFlags: z.array(z.nativeEnum(DrugCategoryFlag)).default([]),
+  items: z.array(medicineItemSchema).max(30).default([]),
+});
+export type PrescriptionTemplateInput = z.infer<typeof prescriptionTemplateBodySchema>;
+
+export const prescriptionTemplateSchema = prescriptionTemplateBodySchema.extend({
+  id: cuid,
+  createdAt: isoDate,
+  updatedAt: isoDate,
+});
+export type PrescriptionTemplate = z.infer<typeof prescriptionTemplateSchema>;
+
 export const prescriptionItemOutSchema = prescriptionItemSchema.extend({ id: cuid });
 export type PrescriptionItemOut = z.infer<typeof prescriptionItemOutSchema>;
 
@@ -402,6 +512,7 @@ export type PrescriptionStatus = z.infer<typeof prescriptionStatusSchema>;
 export const prescriptionViewSchema = z.object({
   id: cuid,
   appointmentId: cuid,
+  doctorId: cuid, // the consulting doctor's user id — lets the patient book a follow-up
   status: prescriptionStatusSchema,
   issuedAt: isoDate,
   finalizedAt: isoDate.nullable(),
@@ -497,8 +608,56 @@ export const meSchema = z.object({
   user: userSchema.extend({
     emailVerified: z.boolean(),
     createdAt: isoDate,
+    updatedAt: isoDate,
   }),
   patientProfile: patientProfileOutSchema.nullable(),
   doctorProfile: doctorProfileOutSchema.nullable(),
 });
 export type Me = z.infer<typeof meSchema>;
+
+/* --------------------------------------------------------- data export (DPDP) */
+
+/** A prescription as it appears in the patient's own data export — flat and
+ *  self-contained; doctor-only clinical `notes` are never included. */
+export const dataExportPrescriptionSchema = z.object({
+  id: cuid,
+  appointmentId: cuid,
+  issuedAt: isoDate,
+  finalizedAt: isoDate.nullable(),
+  symptoms: z.string().nullable(),
+  diagnosis: z.string(),
+  advice: z.string().nullable(),
+  followUpDate: z.string().date().nullable(),
+  drugCategoryFlags: z.array(z.string()),
+  items: z.array(prescriptionItemOutSchema),
+});
+export type DataExportPrescription = z.infer<typeof dataExportPrescriptionSchema>;
+
+/** Everything CareLink holds about the requesting patient — served by
+ *  `GET /me/export` as a downloadable JSON file (DPDP right to access). */
+export const patientDataExportSchema = z.object({
+  exportedAt: isoDate,
+  user: z.object({
+    id: cuid,
+    email: z.string().email(),
+    fullName: z.string(),
+    phone: z.string().nullable(),
+    role: z.nativeEnum(UserRole),
+    emailVerified: z.boolean(),
+    avatarUrl: z.string().nullable(),
+    createdAt: isoDate,
+  }),
+  patientProfile: patientProfileOutSchema.nullable(),
+  appointments: z.array(appointmentSchema.extend({ doctorName: z.string() })),
+  prescriptions: z.array(dataExportPrescriptionSchema),
+  messages: z.array(messageSchema),
+  documents: z.array(
+    z.object({
+      id: cuid,
+      kind: z.nativeEnum(DocumentKind),
+      title: z.string(),
+      uploadedAt: isoDate,
+    }),
+  ),
+});
+export type PatientDataExport = z.infer<typeof patientDataExportSchema>;
