@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { Button } from '@/components/Button';
-import { DatePickerField } from '@/components/DatePickerField';
+import { RowDatePicker } from '@/components/RowDatePicker';
 import { Field } from '@/components/Field';
 import { FlagChips } from '@/components/FlagChips';
 import { IntakePanel } from '@/components/IntakePanel';
@@ -19,7 +19,7 @@ import {
 } from '@/components/MedicineRowsEditor';
 import { Notice } from '@/components/Notice';
 import { Screen } from '@/components/Screen';
-import { Select } from '@/components/Select';
+import { RowSelect } from '@/components/RowSelect';
 import { showToast } from '@/components/ToastMessage';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useTemplates } from '@/hooks/usePrescriptionTemplates';
@@ -195,13 +195,13 @@ export default function PrescriptionForm() {
             {error ? <Notice tone="danger">{error}</Notice> : null}
 
             {templateOptions.length > 0 ? (
-              <Select
+              <RowSelect
                 label="Start from a template"
+                sheetTitle="Templates"
                 placeholder="Choose a template…"
                 options={templateOptions}
                 value=""
                 onChange={(v) => v && applyTemplate(v)}
-                search={templateOptions.length > 8}
               />
             ) : null}
 
@@ -213,7 +213,8 @@ export default function PrescriptionForm() {
               <Text style={sectionStyle(color)}>Medicines{medCount ? ` · ${medCount}` : ''}</Text>
             </View>
             {favoriteOptions.length > 0 ? (
-              <Select
+              <RowSelect
+                sheetTitle="Regular medicines"
                 placeholder="Add from your regular medicines…"
                 options={favoriteOptions}
                 value=""
@@ -230,7 +231,7 @@ export default function PrescriptionForm() {
               value={notes}
               onChangeText={setNotes}
             />
-            <DatePickerField
+            <RowDatePicker
               label="Follow-up date"
               value={followUpDate}
               onChange={setFollowUpDate}

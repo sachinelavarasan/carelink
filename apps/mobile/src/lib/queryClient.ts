@@ -1,7 +1,8 @@
+import { AppState } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
-import { QueryClient, onlineManager } from '@tanstack/react-query';
+import { QueryClient, focusManager, onlineManager } from '@tanstack/react-query';
 
 const ONE_DAY = 1000 * 60 * 60 * 24;
 
@@ -32,3 +33,9 @@ export const persistOptions = {
 onlineManager.setEventListener((setOnline) =>
   NetInfo.addEventListener((state) => setOnline(Boolean(state.isConnected))),
 );
+
+// Treat "app returned to the foreground" as a refetch trigger (RN has no
+// window focus event).
+AppState.addEventListener('change', (state) => {
+  focusManager.setFocused(state === 'active');
+});

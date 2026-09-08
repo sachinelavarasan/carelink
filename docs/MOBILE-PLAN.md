@@ -127,7 +127,7 @@ Each phase ends green on `npm run typecheck && npm run lint --workspace @carelin
 7. ✅ `src/hooks/useAuthApi.ts` — `useForgotPassword`, `useResetPassword`, `useResendVerification` (login / register stay in `AuthContext`).
 8. `src/components/AuthShell.tsx` — shared branded frame. Deep-link association (App Links / Universal Links) deferred to the build phase; the `carelink://` scheme + param handling work today.
 
-> **Typed-routes note:** adding a route requires regenerating `.expo/types` (run `npm run build` / `expo start`) before `tsc` sees it. Done here.
+> **Typed-routes note:** `.expo/types/router.d.ts` is regenerated only by `expo start` (NOT `expo export` or `tsc`). After adding routes, run `npx expo start --offline` briefly (kill once the file rewrites) before `npm run typecheck`. CI (`turbo run typecheck`) needs the same step, or `.expo/types` committed, or `experiments.typedRoutes` turned off.
 
 ### Phase 3 — Design-system components ✅ done
 Inline-styled from the `color` token map, under `src/components/` (+ `src/hooks/useConfirm.tsx`):
@@ -261,7 +261,7 @@ form mirrors the prescription skeleton (name, symptoms, diagnosis, advice,
 medicines, follow-up offset). Consumed by the Phase 11 "start from a template"
 picker.
 
-### Phase 15 — Profile / account + doctor availability
+### Phase 15 — Profile / account + doctor availability ✅ done
 1. `app/(tabs)/profile.tsx` — account form (`updateAccountSchema`), role profile
    form (patient: `patientProfileSchema`; doctor: `doctorProfileSchema` incl.
    `favoriteMedicines` rows), theme toggle, links to secondary screens, **Sign
@@ -270,22 +270,24 @@ picker.
    (replace-all via `useReplaceRules`), date exceptions list + add/delete, range
    close (holiday / leave) via `useCloseRange`. Phone-sized: one weekday at a time.
 
-### Phase 16 — Push notifications
+### Phase 16 — Push notifications ✅ done
 1. `src/lib/push.ts` — `registerForPushNotificationsAsync()` (permissions, `expo-device` guard, `getExpoPushTokenAsync`, Android channel).
 2. `src/contexts/NotificationContext.tsx` — request token, expose `expoPushToken`, received/response listeners; on tap route by `data.type` (`appointment_reminder` / `prescription_ready` → the relevant screen).
 3. `AuthContext` effect: `status === 'authenticated' && expoPushToken` → `useRegisterPushToken({ token, platform })`; on `signOut` → best-effort `useDisablePushToken`.
 4. `Notifications.setNotificationHandler` in `_layout`.
 
-### Phase 17 — Offline + resilience
+### Phase 17 — Offline + resilience ✅ done
 `persistOptions` (maxAge 1 day) already wired; add `NetworkInfoModal` in `_layout`,
 confirm mutations (book / cancel / finalize) disable + toast when `onlineManager`
 reports offline.
 
-### Phase 18 — Build & release
-1. `eas init`, fill `extra.eas.projectId` + `updates.url`.
-2. `eas build --profile development` → dev client; smoke test against the deployed API.
-3. `preview` internal build for the doctor.
-4. Update `README.md` "Mobile" section (no longer "paused after M2").
+### Phase 18 — Build & release ◐ in progress
+1. ✅ `eas init` — `extra.eas.projectId` + `updates.url` set; `eas.json` dev/preview/production; `expo-build-properties` + `withIncreasedMetaspace`; `.easignore`.
+2. ✅ **Assets & fonts** — `assets/images/{icon,logo,splash-icon,splash-icon-dark,android-icon-foreground,android-icon-monochrome}.png` + `assets/fonts/Inter-*.ttf` (9 weights). `app.config.ts`: `icon`, `android.adaptiveIcon` (foreground + monochrome), `expo-splash-screen` image + dark image, `expo-font` plugin embeds the Inter faces. `withColorOnlySplash` plugin removed (only needed for a colour-only splash). `src/lib/fonts.ts` loads the faces via `useFonts` and patches `Text` / `TextInput` to map `fontWeight` → the matching `Inter-*` face (explicit `fontFamily` still wins) — no per-screen edits. `_layout` holds the splash until auth **and** fonts are ready. `AuthShell` shows `logo.png`. Root `eslint.config.mjs` gained an `apps/mobile` override for asset `require()`.
+   _Supplied icon/foreground PNGs are ~270–280 px — replace with 1024×1024 before a store build._
+3. `eas build --profile development` → dev client; smoke test against the deployed API. _(yours to run)_
+4. `preview` internal build for the doctor.
+5. Update `README.md` "Mobile" section (no longer "paused after M2").
 
 ### Phase 19 — QA pass
 `npm run typecheck`, `npm run lint`, `expo export`; manual matrix: patient +

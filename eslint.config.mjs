@@ -44,5 +44,12 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-imports': 'off',
     },
   },
+  {
+    // React Native / Metro bundles static assets (fonts, images) via `require`.
+    files: ['apps/mobile/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
   prettier,
 );

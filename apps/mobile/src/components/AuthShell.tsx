@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, Text, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, Text, View } from 'react-native';
 
 import { Screen } from '@/components/Screen';
 import { useTheme } from '@/theme/ThemeProvider';
 import { ThemeToggle } from '@/theme/ThemeToggle';
+
+const logo = require('../../assets/images/logo.png');
 
 /** Centered, branded frame shared by every /(auth) screen. */
 export function AuthShell({
@@ -25,10 +27,13 @@ export function AuthShell({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ gap: 14 }}
       >
-        <View style={{ gap: 4, marginBottom: 4 }}>
-          <Text style={{ textAlign: 'center', fontSize: 28, fontWeight: '700', color: color.foreground }}>
-            CareLink
-          </Text>
+        <View style={{ alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <Image
+            source={logo}
+            resizeMode="contain"
+            style={{ width: 168, height: 90 }}
+            accessibilityLabel="CareLink"
+          />
           <Text style={{ textAlign: 'center', fontSize: 14, color: color['muted-foreground'] }}>
             {subtitle ?? title}
           </Text>

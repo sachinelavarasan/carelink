@@ -1,9 +1,12 @@
 import type { Slot } from '@carelink/shared';
 import { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { Calendar } from 'react-native-calendars';
+import type { MarkedDates } from 'react-native-calendars/src/types';
 import { Redirect, Stack, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { Field } from '@/components/Field';
 import { Notice } from '@/components/Notice';
 import { Screen } from '@/components/Screen';
@@ -13,10 +16,11 @@ import { useAppointment, useBookAppointment, useRescheduleAppointment } from '@/
 import { useDoctor } from '@/hooks/useDoctors';
 import { useDoctorSlots } from '@/hooks/useAvailability';
 import { errMessage } from '@/lib/api';
+import { calendarTheme } from '@/lib/calendarTheme';
 import { fmtDayHeading, fmtTime, isoDate } from '@/lib/format';
 import { useTheme } from '@/theme/ThemeProvider';
 
-function groupByDay(slots: Slot[]): [string, Slot[]][] {
+function groupByDay(slots: Slot[]): Map<string, Slot[]> {
   const map = new Map<string, Slot[]>();
   for (const s of slots) {
     const k = s.start.slice(0, 10);
@@ -24,7 +28,7 @@ function groupByDay(slots: Slot[]): [string, Slot[]][] {
     if (arr) arr.push(s);
     else map.set(k, [s]);
   }
-  return [...map.entries()];
+  return map;
 }
 
 export default function Book() {
@@ -51,8 +55,10 @@ export default function Book() {
   }, [focusDate, from]);
 
   const slotsQ = useDoctorSlots(doctorId, from, to);
-  const days = useMemo(() => groupByDay(slotsQ.data ?? []), [slotsQ.data]);
+  const byDay = useMemo(() => groupByDay(slotsQ.data ?? []), [slotsQ.data]);
+  const slotDays = useMemo(() => [...byDay.keys()].sort(), [byDay]);
 
+  const [day, setDay] = useState<string | null>(null);
   const [picked, setPicked] = useState<Slot | null>(null);
   const [reason, setReason] = useState('');
   const [consent, setConsent] = useState(false);
@@ -61,6 +67,24 @@ export default function Book() {
   const book = useBookAppointment();
   const reschedule = useRescheduleAppointment(rescheduleId ?? '');
   const busy = book.isPending || reschedule.isPending;
+
+  // First render with data: land on the focus date (if it has slots) or the
+  // earliest day with a free slot.
+  const activeDay = day ?? (focusDate && byDay.has(focusDate) ? focusDate : slotDays[0] ?? null);
+  const daySlots = activeDay ? (byDay.get(activeDay) ?? []) : [];
+
+  const marked = useMemo<MarkedDates>(() => {
+    const m: MarkedDates = {};
+    for (const d of slotDays) m[d] = { marked: true, dotColor: color.primary };
+    if (activeDay) {
+      m[activeDay] = {
+        ...(m[activeDay] ?? {}),
+        selected: true,
+        selectedColor: color.primary,
+      };
+    }
+    return m;
+  }, [slotDays, activeDay, color.primary]);
 
   if (!rescheduleId && !params.doctorId) return <Redirect href="/(tabs)/doctors" />;
 
@@ -121,46 +145,64 @@ export default function Book() {
 
         {slotsQ.isLoading ? (
           <Text style={{ fontSize: 13, color: color['muted-foreground'] }}>Loading slots…</Text>
-        ) : slotsQ.data && days.length === 0 ? (
+        ) : slotDays.length === 0 ? (
           <Notice tone="warning">No open slots in this window.</Notice>
         ) : (
-          days.map(([day, slots]) => (
-            <View key={day} style={{ gap: 6 }}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: color.foreground }}>
-                {fmtDayHeading(slots[0].start)}
-                {day === focusDate ? '  · suggested' : ''}
-              </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {slots.map((s) => {
-                  const active = picked?.start === s.start;
-                  return (
-                    <Pressable
-                      key={s.start}
-                      onPress={() => setPicked(s)}
-                      style={{
-                        borderRadius: 8,
-                        borderWidth: 1,
-                        paddingHorizontal: 12,
-                        paddingVertical: 7,
-                        borderColor: active ? color.primary : color.border,
-                        backgroundColor: active ? color.primary : 'transparent',
-                      }}
-                    >
-                      <Text
+          <>
+            <Card style={{ padding: 6 }}>
+              <Calendar
+                minDate={from}
+                maxDate={to}
+                current={activeDay ?? from}
+                firstDay={1}
+                markedDates={marked}
+                onDayPress={(d) => {
+                  if (!byDay.has(d.dateString)) return; // only days with free slots
+                  setDay(d.dateString);
+                  setPicked(null);
+                }}
+                theme={calendarTheme(color)}
+                style={{ paddingBottom: 4 }}
+              />
+            </Card>
+
+            {activeDay ? (
+              <View style={{ gap: 6 }}>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: color.foreground }}>
+                  {fmtDayHeading(`${activeDay}T00:00:00`)}
+                </Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                  {daySlots.map((s) => {
+                    const active = picked?.start === s.start;
+                    return (
+                      <Pressable
+                        key={s.start}
+                        onPress={() => setPicked(s)}
                         style={{
-                          fontSize: 13,
-                          fontWeight: '600',
-                          color: active ? color['primary-foreground'] : color.foreground,
+                          borderRadius: 8,
+                          borderWidth: 1,
+                          paddingHorizontal: 12,
+                          paddingVertical: 7,
+                          borderColor: active ? color.primary : color.border,
+                          backgroundColor: active ? color.primary : 'transparent',
                         }}
                       >
-                        {fmtTime(s.start)}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
+                        <Text
+                          style={{
+                            fontSize: 13,
+                            fontWeight: '600',
+                            color: active ? color['primary-foreground'] : color.foreground,
+                          }}
+                        >
+                          {fmtTime(s.start)}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
               </View>
-            </View>
-          ))
+            ) : null}
+          </>
         )}
 
         {picked ? (
