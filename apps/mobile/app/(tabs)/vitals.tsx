@@ -5,7 +5,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
-import { DatePickerField } from '@/components/DatePickerField';
+import { RowDatePicker } from '@/components/RowDatePicker';
 import { EmptyState } from '@/components/EmptyState';
 import { Field } from '@/components/Field';
 import { ModalCard } from '@/components/ModalCard';
@@ -153,7 +153,7 @@ export default function Vitals() {
               </View>
             ))}
           </View>
-          <DatePickerField
+          <RowDatePicker
             label="Recorded on"
             value={recordedAt}
             onChange={setRecordedAt}

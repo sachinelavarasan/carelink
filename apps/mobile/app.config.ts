@@ -37,6 +37,7 @@ const config: ExpoConfig = {
   version: '0.1.0',
   orientation: 'portrait',
   userInterfaceStyle: 'automatic',
+  icon: './assets/images/icon.png',
   ios: {
     supportsTablet: true,
     bundleIdentifier: isDev ? 'com.sachinelavarasan.carelink.dev' : 'com.sachinelavarasan.carelink',
@@ -44,24 +45,44 @@ const config: ExpoConfig = {
   android: {
     package: isDev ? 'com.sachinelavarasan.carelink.dev' : 'com.sachinelavarasan.carelink',
     googleServicesFile,
+    adaptiveIcon: {
+      foregroundImage: './assets/images/android-icon-foreground.png',
+      monochromeImage: './assets/images/android-icon-monochrome.png',
+      backgroundColor: '#f8fafc',
+    },
   },
   plugins: [
     'expo-router',
     'expo-secure-store',
-    'expo-font',
     'expo-sharing',
     '@react-native-community/datetimepicker',
-    // Strips the dangling @drawable/splashscreen_logo reference that
-    // expo-splash-screen adds even for a colour-only splash. Its mod must
-    // run *after* expo-splash-screen's styles mod; because same-type mods
-    // execute in reverse registration order, this plugin is listed *before*
-    // 'expo-splash-screen'.
-    './plugins/withColorOnlySplash',
+    [
+      'expo-font',
+      {
+        fonts: [
+          './assets/fonts/Inter-Thin.ttf',
+          './assets/fonts/Inter-ExtraLight.ttf',
+          './assets/fonts/Inter-Light.ttf',
+          './assets/fonts/Inter-Regular.ttf',
+          './assets/fonts/Inter-Medium.ttf',
+          './assets/fonts/Inter-SemiBold.ttf',
+          './assets/fonts/Inter-Bold.ttf',
+          './assets/fonts/Inter-ExtraBold.ttf',
+          './assets/fonts/Inter-Black.ttf',
+        ],
+      },
+    ],
     [
       'expo-splash-screen',
       {
+        image: './assets/images/splash-icon.png',
+        imageWidth: 180,
+        resizeMode: 'contain',
         backgroundColor: '#f8fafc',
-        dark: { backgroundColor: '#0b171b' },
+        dark: {
+          image: './assets/images/splash-icon-dark.png',
+          backgroundColor: '#0b171b',
+        },
       },
     ],
     [

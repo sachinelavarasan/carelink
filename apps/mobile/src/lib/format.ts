@@ -18,6 +18,11 @@ export const fmtDayHeading = (iso: string) => dayHeading.format(new Date(iso));
 export const fmtDate = (iso: string) => dateOnly.format(new Date(iso));
 export const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 
+export const MONTH_LABELS = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+] as const;
+
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 
 export const isToday = (iso: string) => startOfDay(new Date(iso)) === startOfDay(new Date());

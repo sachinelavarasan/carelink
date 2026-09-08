@@ -9,7 +9,7 @@ import { Notice } from '@/components/Notice';
 import { Screen } from '@/components/Screen';
 import { SearchBar } from '@/components/SearchBar';
 import { SegmentedControl } from '@/components/SegmentedControl';
-import { Select } from '@/components/Select';
+import { RowSelect } from '@/components/RowSelect';
 import { useDoctors, useMyDoctors, useSpecializations } from '@/hooks/useDoctors';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { fmtDate } from '@/lib/format';
@@ -79,11 +79,12 @@ export default function Doctors() {
       ) : null}
 
       <SearchBar value={q} onChange={setQ} placeholder="Name, specialization, keyword" />
-      <Select
+      <RowSelect
+        sheetTitle="Specialization"
+        placeholder="Any specialization"
         options={specOptions}
         value={specialization}
-        onChange={(v) => setSpecialization(v)}
-        search={specOptions.length > 8}
+        onChange={setSpecialization}
       />
       <SegmentedControl options={SORTS} value={sort} onChange={setSort} label="Sort by" />
 

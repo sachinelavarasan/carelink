@@ -7,7 +7,7 @@ import { Button } from '@/components/Button';
 import { Field } from '@/components/Field';
 import { Notice } from '@/components/Notice';
 import { Screen } from '@/components/Screen';
-import { Select } from '@/components/Select';
+import { RowSelect } from '@/components/RowSelect';
 import { showToast } from '@/components/ToastMessage';
 import { useAppointment } from '@/hooks/useAppointments';
 import { useIntake, useSaveIntake } from '@/hooks/useIntake';
@@ -120,8 +120,9 @@ export default function Intake() {
           control={control}
           name="severity"
           render={({ field }) => (
-            <Select
+            <RowSelect
               label="Severity"
+              sheetTitle="Severity"
               options={SEVERITY}
               value={field.value}
               onChange={field.onChange}

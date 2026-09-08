@@ -83,12 +83,8 @@ export default function Login() {
         onPress={handleSubmit(onSubmit)}
       />
 
+      {/* Self-signup is hidden — accounts are provisioned (mirrors the web app). */}
       <AuthLink linkText="Forgot password?" onPress={() => router.push('/(auth)/forgot-password')} />
-      <AuthLink
-        description="No account?"
-        linkText="Register"
-        onPress={() => router.push('/(auth)/register')}
-      />
     </AuthShell>
   );
 }
