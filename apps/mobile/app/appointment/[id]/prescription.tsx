@@ -1,17 +1,13 @@
-import {
-  DrugCategoryFlag,
-  type CreatePrescriptionInput,
-  type MedicineItem,
-} from '@carelink/shared';
-import { drugCategoryFlagMeta } from '@carelink/theme';
+import type { CreatePrescriptionInput, MedicineItem } from '@carelink/shared';
 import { useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { Button } from '@/components/Button';
 import { DatePickerField } from '@/components/DatePickerField';
 import { Field } from '@/components/Field';
+import { FlagChips } from '@/components/FlagChips';
 import { IntakePanel } from '@/components/IntakePanel';
 import {
   MedicineRowsEditor,
@@ -38,8 +34,6 @@ import { api, errMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { isoDate } from '@/lib/format';
 import { useTheme } from '@/theme/ThemeProvider';
-
-const FLAGS = Object.values(DrugCategoryFlag);
 
 export default function PrescriptionForm() {
   const { id: appointmentId } = useLocalSearchParams<{ id: string }>();
@@ -248,42 +242,7 @@ export default function PrescriptionForm() {
               <Text style={{ fontSize: 13, fontWeight: '500', color: color.foreground }}>
                 Drug categories
               </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {FLAGS.map((f) => {
-                  const on = flags.has(f);
-                  return (
-                    <Pressable
-                      key={f}
-                      onPress={() =>
-                        setFlags((s) => {
-                          const next = new Set(s);
-                          if (next.has(f)) next.delete(f);
-                          else next.add(f);
-                          return next;
-                        })
-                      }
-                      style={{
-                        borderRadius: 999,
-                        borderWidth: 1,
-                        paddingHorizontal: 12,
-                        paddingVertical: 6,
-                        borderColor: on ? color.primary : color.border,
-                        backgroundColor: on ? color.primary : 'transparent',
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          fontWeight: '600',
-                          color: on ? color['primary-foreground'] : color['muted-foreground'],
-                        }}
-                      >
-                        {drugCategoryFlagMeta[f].label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
+              <FlagChips value={flags} onChange={setFlags} />
             </View>
 
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>

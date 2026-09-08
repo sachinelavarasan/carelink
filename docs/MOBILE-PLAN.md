@@ -241,21 +241,21 @@ screens.
    `expo-file-system` + `expo-sharing` in this phase.
 3. Patient push / list entry point comes from the appointment card + medical history.
 
-### Phase 12 — Medical history (M4)
+### Phase 12 — Medical history (M4) ✅ done
 - `app/medical-history.tsx` (patient, `useMedicalHistory`) — past appointments with
   finalised prescriptions, each row → `prescription/[id]`.
 - `app/patient/[id]/history.tsx` (doctor, `usePatientHistory`) — same view scoped
   to one patient (own appointments only), reached from the Patients tab / an
   appointment.
 
-### Phase 13 — Patient vitals (Tier 2)
+### Phase 13 — Patient vitals (Tier 2) ✅ done
 - `app/(tabs)/vitals.tsx` (patient) — list from `useMyVitals`, add-entry sheet
   (`vitalEntrySchema`: weight / BP / HR / blood sugar / temperature), swipe to
   delete (`useDeleteVital`). Lightweight trend: latest value + delta per metric;
   optional `react-native-svg` sparkline (defer the chart if it bloats the phase).
 - Doctor reads a patient's vitals via `usePatientVitals` on `patient/[id]/history`.
 
-### Phase 14 — Prescription templates (Tier 2, doctor)
+### Phase 14 — Prescription templates (Tier 2, doctor) ✅ done
 `app/templates.tsx` — list + create / edit / delete (`usePrescriptionTemplates`),
 form mirrors the prescription skeleton (name, symptoms, diagnosis, advice,
 medicines, follow-up offset). Consumed by the Phase 11 "start from a template"
