@@ -4,10 +4,13 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   HttpCode,
   NotImplementedException,
+  Patch,
   PayloadTooLargeException,
   Put,
+  StreamableFile,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -17,6 +20,7 @@ import {
   deleteAccountSchema,
   doctorProfileSchema,
   patientProfileSchema,
+  updateAccountSchema,
   type AvatarResult,
   type DeleteAccountInput,
   type DoctorProfileInput,
@@ -24,6 +28,7 @@ import {
   type Me,
   type PatientProfileInput,
   type PatientProfileOut,
+  type UpdateAccountInput,
 } from '@carelink/shared';
 import { CurrentUser, type AuthUser } from '../common/current-user.decorator';
 import { Roles } from '../common/roles.decorator';
@@ -60,6 +65,19 @@ export class UsersController {
     return this.users.getMe(user.id);
   }
 
+  /** DPDP right to access — the patient's full record as a downloadable JSON file. */
+  @Get('me/export')
+  @Roles('PATIENT')
+  @Header('Content-Type', 'application/json; charset=utf-8')
+  async exportData(@CurrentUser() user: AuthUser): Promise<StreamableFile> {
+    const bundle = await this.users.exportPatientData(user.id);
+    const json = Buffer.from(JSON.stringify(bundle, null, 2), 'utf-8');
+    return new StreamableFile(json, {
+      type: 'application/json',
+      disposition: `attachment; filename="carelink-export-${bundle.exportedAt.slice(0, 10)}.json"`,
+    });
+  }
+
   /** Upload / replace the current user's profile picture. Multipart field `file`. */
   @Put('me/avatar')
   @UseInterceptors(
@@ -86,6 +104,15 @@ export class UsersController {
   @HttpCode(200)
   deleteAvatar(@CurrentUser() user: AuthUser): Promise<AvatarResult> {
     return this.users.clearAvatar(user.id);
+  }
+
+  /** Edit the account's own display name / phone. */
+  @Patch('me')
+  updateAccount(
+    @CurrentUser() user: AuthUser,
+    @Body(new ZodValidationPipe(updateAccountSchema)) body: UpdateAccountInput,
+  ): Promise<Me> {
+    return this.users.updateAccount(user.id, body);
   }
 
   @Put('me/patient-profile')

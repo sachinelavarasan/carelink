@@ -336,6 +336,46 @@ export default function Availability() {
   );
 }
 
+const nextDay = (d: string) => {
+  const x = new Date(`${d}T00:00:00Z`);
+  x.setUTCDate(x.getUTCDate() + 1);
+  return x.toISOString().slice(0, 10);
+};
+const dayCount = (from: string, to: string) =>
+  Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000) + 1;
+
+interface Block {
+  from: string;
+  to: string;
+  isClosed: boolean;
+  startTime?: string;
+  endTime?: string;
+  ids: string[];
+}
+
+/** Fold consecutive closed single-day overrides into one holiday/leave block so a
+ *  two-week break shows as one card, not fourteen. Custom-hours days never merge. */
+function groupBlocks(items: AvailabilityExceptionOut[]): Block[] {
+  const blocks: Block[] = [];
+  for (const x of [...items].sort((a, b) => a.date.localeCompare(b.date))) {
+    const prev = blocks[blocks.length - 1];
+    if (prev && prev.isClosed && x.isClosed && nextDay(prev.to) === x.date) {
+      prev.to = x.date;
+      prev.ids.push(x.id);
+    } else {
+      blocks.push({
+        from: x.date,
+        to: x.date,
+        isClosed: x.isClosed,
+        startTime: x.startTime,
+        endTime: x.endTime,
+        ids: [x.id],
+      });
+    }
+  }
+  return blocks;
+}
+
 function Exceptions({
   list,
   loading,
@@ -346,14 +386,14 @@ function Exceptions({
   onChange: () => void;
 }) {
   const today = isoDate(new Date());
-  const upcoming = list
-    .filter((x) => x.date >= today)
-    .sort((a, b) => a.date.localeCompare(b.date));
+  const blocks = groupBlocks(list.filter((x) => x.date >= today));
 
   const [date, setDate] = useState('');
   const [mode, setMode] = useState<'closed' | 'custom'>('closed');
   const [start, setStart] = useState('10:00');
   const [end, setEnd] = useState('14:00');
+  const [rangeFrom, setRangeFrom] = useState('');
+  const [rangeTo, setRangeTo] = useState('');
   const [err, setErr] = useState<string | null>(null);
 
   async function add(e: FormEvent) {
@@ -372,17 +412,45 @@ function Exceptions({
     }
   }
 
-  async function remove(id: string) {
-    if (!window.confirm('Remove this date override?')) return;
-    await api.delete(`/me/availability/exceptions/${id}`);
+  async function addRange(e: FormEvent) {
+    e.preventDefault();
+    setErr(null);
+    try {
+      await api.put('/me/availability/exceptions/range', {
+        from: rangeFrom,
+        to: rangeTo,
+        isClosed: true,
+      });
+      setRangeFrom('');
+      setRangeTo('');
+      onChange();
+    } catch (e2) {
+      setErr(errMessage(e2, 'Could not save'));
+    }
+  }
+
+  async function removeBlock(block: Block) {
+    const label =
+      block.ids.length === 1
+        ? 'Remove this date override?'
+        : `Remove this ${dayCount(block.from, block.to)}-day closed block?`;
+    if (!window.confirm(label)) return;
+    if (block.ids.length === 1) {
+      await api.delete(`/me/availability/exceptions/${block.ids[0]}`);
+    } else {
+      await api.delete('/me/availability/exceptions/range', {
+        params: { from: block.from, to: block.to },
+      });
+    }
     onChange();
   }
 
   return (
     <section className="mt-8">
-      <h2 className="text-base font-semibold">Date overrides</h2>
+      <h2 className="text-base font-semibold">Time off &amp; date overrides</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Close a specific day or set different hours for it — takes priority over the weekly template.
+        Close a single day, set different hours for it, or block out a holiday / leave range — these
+        take priority over the weekly template.
       </p>
       {err && (
         <div className="mt-2">
@@ -392,19 +460,26 @@ function Exceptions({
 
       {loading ? (
         <Skeleton className="mt-3 h-16 w-full" />
-      ) : upcoming.length === 0 ? (
+      ) : blocks.length === 0 ? (
         <div className="mt-3">
           <EmptyState icon={CalendarClockIcon} title="No upcoming overrides" />
         </div>
       ) : (
         <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {upcoming.map((x) => (
-            <Card key={x.id} size="sm">
+          {blocks.map((b) => (
+            <Card key={`${b.from}_${b.to}`} size="sm">
               <CardContent className="flex items-center justify-between gap-3">
                 <span className="text-sm">
-                  <strong className="font-medium">{x.date}</strong> ·{' '}
+                  <strong className="font-medium">
+                    {b.from === b.to ? b.from : `${b.from} – ${b.to}`}
+                  </strong>{' '}
+                  ·{' '}
                   <span className="text-muted-foreground">
-                    {x.isClosed ? 'Closed' : `${x.startTime}–${x.endTime}`}
+                    {b.isClosed
+                      ? b.from === b.to
+                        ? 'Closed'
+                        : `Closed · ${dayCount(b.from, b.to)} days`
+                      : `${b.startTime}–${b.endTime}`}
                   </span>
                 </span>
                 <Button
@@ -412,7 +487,7 @@ function Exceptions({
                   variant="ghost"
                   size="icon-xs"
                   aria-label="Remove override"
-                  onClick={() => void remove(x.id)}
+                  onClick={() => void removeBlock(b)}
                 >
                   <XIcon />
                 </Button>
@@ -459,6 +534,30 @@ function Exceptions({
         )}
         <Button type="submit" variant="outline" size="sm">
           Add override
+        </Button>
+      </form>
+
+      <form onSubmit={addRange} className="mt-3 flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium">Close a range</span>
+        <Input
+          type="date"
+          required
+          min={today}
+          className="w-40"
+          value={rangeFrom}
+          onChange={(e) => setRangeFrom(e.target.value)}
+        />
+        <span className="text-muted-foreground">–</span>
+        <Input
+          type="date"
+          required
+          min={rangeFrom || today}
+          className="w-40"
+          value={rangeTo}
+          onChange={(e) => setRangeTo(e.target.value)}
+        />
+        <Button type="submit" variant="outline" size="sm">
+          Block out
         </Button>
       </form>
     </section>

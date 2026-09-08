@@ -331,6 +331,7 @@ export class PrescriptionsService {
     return {
       id: row.id,
       appointmentId: row.appointmentId,
+      doctorId: row.doctorId,
       status: row.finalizedAt ? 'FINALIZED' : 'DRAFT',
       issuedAt: row.issuedAt.toISOString(),
       finalizedAt: row.finalizedAt ? row.finalizedAt.toISOString() : null,

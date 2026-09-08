@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
 import { CardGridSkeleton, cardGridClass } from '../components/CardGridSkeleton';
 import { EmptyState } from '../components/EmptyState';
+import { PreVisitSheet } from '../components/IntakeForm';
 import { ConsultationRecordButton } from '../components/PrescriptionDetails';
 import { Notice } from '../components/Notice';
 import { Spinner } from '../components/Spinner';
@@ -199,6 +200,7 @@ function ListView({
                         </Link>
                       </>
                     )}
+                    {role === 'PATIENT' && <PreVisitSheet appointmentId={a.id} />}
                     {role === 'PATIENT' && (
                       <Link
                         className="text-primary underline underline-offset-4"

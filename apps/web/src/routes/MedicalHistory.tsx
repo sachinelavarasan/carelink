@@ -1,6 +1,10 @@
-import type { MedicalHistoryEntry, MedicalHistory as MedicalHistoryPage } from '@carelink/shared';
+import type {
+  MedicalHistoryEntry,
+  MedicalHistory as MedicalHistoryPage,
+  VitalsList,
+} from '@carelink/shared';
 import { useQuery } from '@tanstack/react-query';
-import { FileClockIcon } from 'lucide-react';
+import { ActivityIcon, CalendarPlusIcon, FileClockIcon } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
 import { BackLink } from '../components/BackLink';
@@ -9,10 +13,13 @@ import { EmptyState } from '../components/EmptyState';
 import { Notice } from '../components/Notice';
 import { ConsultationRecordButton, PdfButton } from '../components/PrescriptionDetails';
 import { StatusBadge } from '../components/StatusBadge';
+import { VitalsPanel } from '../components/VitalsPanel';
+import { buttonVariants } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
+import { cn } from '@/lib/utils';
 import { apiGet } from '../lib/api';
 import { useAuth } from '../lib/auth';
-import { fmtDateTime } from '../lib/format';
+import { fmtDateTime, isoDate } from '../lib/format';
 
 export default function MedicalHistory() {
   // Three entry points share this screen:
@@ -31,6 +38,13 @@ export default function MedicalHistory() {
     queryFn: () => apiGet<MedicalHistoryPage>(path, params),
   });
 
+  // Doctor viewing one patient: also show their self-logged vitals.
+  const vitalsQ = useQuery({
+    queryKey: ['patient-vitals', patientId],
+    queryFn: () => apiGet<VitalsList>(`/patients/${patientId}/vitals`),
+    enabled: doctorView,
+  });
+
   const items = historyQ.data?.items ?? [];
 
   const title = doctorView
@@ -46,6 +60,18 @@ export default function MedicalHistory() {
         <BackLink to={backTo}>{backTo === '/patients' ? 'Patients' : 'My doctors'}</BackLink>
       )}
       <h1 className="mb-3 text-xl font-semibold">{title}</h1>
+
+      {doctorView && vitalsQ.data && vitalsQ.data.items.length > 0 && (
+        <Card className="mb-5">
+          <CardContent className="grid gap-3">
+            <h2 className="flex items-center gap-1.5 text-sm font-semibold">
+              <ActivityIcon className="size-4" aria-hidden />
+              Patient-logged vitals
+            </h2>
+            <VitalsPanel items={vitalsQ.data.items} />
+          </CardContent>
+        </Card>
+      )}
 
       {historyQ.isLoading && <CardGridSkeleton count={6} />}
       {historyQ.isError && <Notice kind="error">Could not load the history.</Notice>}
@@ -119,6 +145,17 @@ function HistoryCard({ e, doctorView }: { e: MedicalHistoryEntry; doctorView: bo
                   label="PDF"
                 />
               )}
+              {!doctorView &&
+                e.prescription.followUpDate &&
+                e.prescription.followUpDate >= isoDate(new Date()) && (
+                  <Link
+                    className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+                    to={`/book?doctorId=${e.prescription.doctorId}&date=${e.prescription.followUpDate}`}
+                  >
+                    <CalendarPlusIcon />
+                    Book follow-up
+                  </Link>
+                )}
             </div>
           </div>
         ) : (

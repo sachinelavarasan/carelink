@@ -2,6 +2,7 @@ import {
   DrugCategoryFlag,
   type DoctorProfileInput,
   type MedicineItem,
+  type PrescriptionTemplate,
   type PrescriptionView,
 } from '@carelink/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -18,6 +19,7 @@ import {
   toMedicineItems,
   type MedicineRow,
 } from '../components/MedicineRows';
+import { IntakePanel } from '../components/IntakeForm';
 import { Notice } from '../components/Notice';
 import { PrescriptionDetails } from '../components/PrescriptionDetails';
 import { Spinner } from '../components/Spinner';
@@ -35,6 +37,7 @@ import {
 import { Textarea } from '../components/ui/textarea';
 import { api, apiGet, errMessage, isStatus } from '../lib/api';
 import { useAuth } from '../lib/auth';
+import { isoDate } from '../lib/format';
 
 /** The full DoctorProfileInput rebuilt from `me`, for a favourites PUT. */
 function doctorProfileInput(
@@ -102,6 +105,12 @@ export default function Prescription() {
       <BackLink to="/appointments">Appointments</BackLink>
       <h1 className="mb-2 text-xl font-semibold">Prescription</h1>
 
+      {isDoctor && (
+        <div className="mb-4">
+          <IntakePanel appointmentId={appointmentId} />
+        </div>
+      )}
+
       {editable ? (
         <PrescriptionForm
           appointmentId={appointmentId}
@@ -164,11 +173,32 @@ function PrescriptionForm({
     );
   }, [existing]);
 
+  const templatesQ = useQuery({
+    queryKey: ['prescription-templates'],
+    queryFn: () => apiGet<PrescriptionTemplate[]>('/me/prescription-templates'),
+  });
+  const templates = templatesQ.data ?? [];
+
   function addFavorite(m: MedicineItem) {
     setItems((rs) => {
       const trimmed = rs.filter((r) => r.drugName.trim() || r.frequency.trim());
       return [...trimmed, fromMedicineItem(m)];
     });
+  }
+
+  function applyTemplate(t: PrescriptionTemplate) {
+    const dirty = diagnosis.trim() || symptoms.trim() || advice.trim();
+    if (dirty && !window.confirm(`Replace the current fields with the “${t.name}” template?`)) {
+      return;
+    }
+    setSymptoms(t.symptoms ?? '');
+    setDiagnosis(t.diagnosis ?? '');
+    setAdvice(t.advice ?? '');
+    setFlags(new Set(t.drugCategoryFlags));
+    setItems(t.items.length > 0 ? t.items.map(fromMedicineItem) : [blankMedicine()]);
+    if (t.followUpDays != null) {
+      setFollowUpDate(isoDate(new Date(Date.now() + t.followUpDays * 86_400_000)));
+    }
   }
 
   async function saveAsRegular(row: MedicineRow) {
@@ -258,6 +288,30 @@ function PrescriptionForm({
       )}
       {error && <Notice kind="error">{error}</Notice>}
       {savedFav && <Notice kind="success">Saved “{savedFav}” to your regular medicines.</Notice>}
+
+      {templates.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground">Start from a template</span>
+          <Select
+            value=""
+            onValueChange={(v) => {
+              const t = templates.find((x) => x.id === v);
+              if (t) applyTemplate(t);
+            }}
+          >
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="Choose a template…" />
+            </SelectTrigger>
+            <SelectContent>
+              {templates.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <section className="grid gap-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">

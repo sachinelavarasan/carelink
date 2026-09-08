@@ -3,6 +3,7 @@ import { and, desc, eq, gte, inArray, lte, ne, sql } from 'drizzle-orm';
 import type {
   AvailabilityExceptionInput,
   AvailabilityExceptionOut,
+  AvailabilityExceptionRangeInput,
   AvailabilityRuleOut,
   DoctorPublic,
   ListDoctorsQuery,
@@ -24,6 +25,8 @@ import {
 import { expandSlots } from './slots';
 
 const BOOKED_STATUSES = ['CONFIRMED', 'REQUESTED', 'COMPLETED'] as const;
+/** Upper bound on a single holiday / leave block, in days. */
+const MAX_RANGE_DAYS = 90;
 
 @Injectable()
 export class AvailabilityService {
@@ -313,6 +316,66 @@ export class AvailabilityService {
       .where(and(eq(availabilityExceptions.id, id), eq(availabilityExceptions.doctorId, profileId)));
   }
 
+  /**
+   * Replace every date override in `[from, to]` with one derived from `input` —
+   * a holiday / leave block. "Replace" (delete then insert) rather than upsert so
+   * clearing the block later is a single range delete.
+   */
+  async upsertExceptionRange(
+    doctorUserId: string,
+    input: AvailabilityExceptionRangeInput,
+  ): Promise<AvailabilityExceptionOut[]> {
+    const profileId = await this.profileId(doctorUserId);
+    const dates = enumerateDates(input.from, input.to);
+    if (dates.length > MAX_RANGE_DAYS) {
+      throw new ForbiddenException(`range too wide (max ${MAX_RANGE_DAYS} days)`);
+    }
+    const custom = !input.isClosed;
+    if (custom && (!input.startTime || !input.endTime)) {
+      throw new ForbiddenException('custom hours need both startTime and endTime');
+    }
+    if (custom && input.endTime! <= input.startTime!) {
+      throw new ForbiddenException('endTime must be after startTime');
+    }
+
+    await this.db.transaction(async (tx) => {
+      await tx
+        .delete(availabilityExceptions)
+        .where(
+          and(
+            eq(availabilityExceptions.doctorId, profileId),
+            gte(availabilityExceptions.date, input.from),
+            lte(availabilityExceptions.date, input.to),
+          ),
+        );
+      await tx.insert(availabilityExceptions).values(
+        dates.map((date) => ({
+          doctorId: profileId,
+          date,
+          isClosed: input.isClosed,
+          startTime: custom ? input.startTime! : null,
+          endTime: custom ? input.endTime! : null,
+        })),
+      );
+    });
+
+    return this.listOwnExceptions(doctorUserId);
+  }
+
+  async deleteExceptionRange(doctorUserId: string, from: string, to: string): Promise<void> {
+    if (to < from) throw new ForbiddenException('`to` must be on or after `from`');
+    const profileId = await this.profileId(doctorUserId);
+    await this.db
+      .delete(availabilityExceptions)
+      .where(
+        and(
+          eq(availabilityExceptions.doctorId, profileId),
+          gte(availabilityExceptions.date, from),
+          lte(availabilityExceptions.date, to),
+        ),
+      );
+  }
+
   /** Used by AppointmentsService to validate a chosen slot. Returns the slot (with its end) if free. */
   async findFreeSlot(
     doctorUserId: string,
@@ -347,4 +410,16 @@ function shiftDate(date: string, days: number): string {
   const d = new Date(`${date}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
+}
+
+/** Every calendar date from `from` to `to`, inclusive, as `YYYY-MM-DD`. */
+function enumerateDates(from: string, to: string): string[] {
+  const out: string[] = [];
+  const cursor = new Date(`${from}T00:00:00Z`);
+  const end = Date.parse(`${to}T00:00:00Z`);
+  while (cursor.getTime() <= end) {
+    out.push(cursor.toISOString().slice(0, 10));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return out;
 }

@@ -1,6 +1,6 @@
 import { type FormEvent, useId, useState } from 'react';
 import type { DoctorProfileInput, PatientProfileInput } from '@carelink/shared';
-import { BadgeCheckIcon, ClockIcon } from 'lucide-react';
+import { BadgeCheckIcon, CalendarIcon, ClockIcon, PencilIcon } from 'lucide-react';
 import { AppShell } from '../components/AppShell';
 import { AvatarUpload } from '../components/AvatarUpload';
 import { MedicineRows, fromMedicineItem, toMedicineItems, type MedicineRow } from '../components/MedicineRows';
@@ -19,8 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
-import { api, errMessage } from '../lib/api';
+import { api, downloadFile, errMessage } from '../lib/api';
 import { useAuth } from '../lib/auth';
+import { fmtDate, fmtDateTime } from '../lib/format';
 
 const list = (arr: string[]) => arr.join(', ');
 const parseList = (s: string) =>
@@ -41,7 +42,7 @@ export default function Profile() {
     <AppShell>
       <h1 className="mb-4 text-xl font-semibold">{isDoctor ? 'Doctor profile' : 'Patient profile'}</h1>
 
-      <ProfileHeader me={me} onAvatarChanged={reload} />
+      <ProfileHeader me={me} onSaved={reload} />
 
       <Card className="mt-4">
         <CardContent>
@@ -53,55 +54,220 @@ export default function Profile() {
         </CardContent>
       </Card>
 
+      {!isDoctor && <ExportData />}
       {!isDoctor && <DeleteAccount />}
     </AppShell>
   );
 }
 
-/** Identity card at the top of the profile — who this account is and, for a
- *  doctor, whether they're verified. */
-function ProfileHeader({ me, onAvatarChanged }: { me: Me; onAvatarChanged: () => Promise<void> }) {
+/** DPDP right to access — download the full personal record as JSON. */
+function ExportData() {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function run() {
+    setBusy(true);
+    setError(null);
+    try {
+      await downloadFile('/me/export', 'carelink-export.json');
+    } catch (err) {
+      setError(errMessage(err, 'Could not export your data'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="mt-8">
+      <h2 className="text-base font-semibold">Your data</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Download everything CareLink holds about you — profile, appointments, prescriptions and
+        messages — as a JSON file.
+      </p>
+      {error && (
+        <div className="mt-3">
+          <Notice kind="error">{error}</Notice>
+        </div>
+      )}
+      <Button
+        variant="outline"
+        size="sm"
+        className="mt-3"
+        disabled={busy}
+        onClick={() => void run()}
+      >
+        {busy ? 'Preparing…' : 'Download my data'}
+      </Button>
+    </section>
+  );
+}
+
+/** Identity card at the top of the profile — who this account is, when it was
+ *  last changed, and an inline editor for name / phone (and DOB for patients). */
+function ProfileHeader({ me, onSaved }: { me: Me; onSaved: () => Promise<void> }) {
   const isDoctor = me.user.role === 'DOCTOR';
   const verified = Boolean(me.doctorProfile?.verifiedAt);
   const d = me.doctorProfile;
+  const p = me.patientProfile;
+
+  const lastUpdated = [me.user.updatedAt, p?.updatedAt, me.doctorProfile?.updatedAt]
+    .filter((x): x is string => Boolean(x))
+    .sort()
+    .at(-1);
+
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(me.user.fullName);
+  const [phone, setPhone] = useState(me.user.phone ?? '');
+  const [dob, setDob] = useState(p?.dob ?? '');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function startEdit() {
+    setName(me.user.fullName);
+    setPhone(me.user.phone ?? '');
+    setDob(p?.dob ?? '');
+    setError(null);
+    setEditing(true);
+  }
+
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    if (name.trim().length < 2) {
+      setError('Enter your full name.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const accountChanged =
+        name.trim() !== me.user.fullName || (phone.trim() || null) !== (me.user.phone ?? null);
+      if (accountChanged) {
+        await api.patch('/me', { fullName: name.trim(), phone: phone.trim() || undefined });
+      }
+      if (!isDoctor && p && dob && dob !== p.dob) {
+        await api.put('/me/patient-profile', {
+          dob,
+          gender: p.gender,
+          bloodGroup: p.bloodGroup,
+          heightCm: p.heightCm,
+          weightKg: p.weightKg,
+          address: p.address,
+          emergencyContactName: p.emergencyContactName,
+          emergencyContactPhone: p.emergencyContactPhone,
+          allergies: p.allergies,
+          chronicConditions: p.chronicConditions,
+        });
+      }
+      await onSaved();
+      setEditing(false);
+    } catch (err) {
+      setError(errMessage(err, 'Could not save'));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <Card>
-      <CardContent className="flex flex-wrap items-center gap-4">
-        <AvatarUpload
-          name={me.user.fullName}
-          src={me.user.avatarUrl}
-          onChanged={onAvatarChanged}
-        />
-        <div className="grid gap-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-lg font-semibold">{me.user.fullName}</span>
-            <RoleBadge role={me.user.role} />
-            {isDoctor &&
-              (verified ? (
-                <Badge variant="outline" className="border border-success-border bg-success-bg text-success-fg gap-1">
-                  <BadgeCheckIcon aria-hidden />
-                  Verified
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="border border-warning-border bg-warning-bg text-warning-fg gap-1">
-                  <ClockIcon aria-hidden />
-                  Verification pending
-                </Badge>
-              ))}
+      <CardContent className="flex flex-wrap items-start gap-4">
+        <AvatarUpload name={me.user.fullName} src={me.user.avatarUrl} onChanged={onSaved} />
+
+        {editing ? (
+          <form onSubmit={save} className="grid flex-1 gap-3 sm:max-w-sm">
+            {error && <Notice kind="error">{error}</Notice>}
+            <Field>
+              <FieldLabel>Full name</FieldLabel>
+              <Input value={name} onChange={(e) => setName(e.target.value)} required minLength={2} />
+            </Field>
+            <Field>
+              <FieldLabel>Phone</FieldLabel>
+              <Input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Optional"
+              />
+            </Field>
+            {!isDoctor && p && (
+              <Field>
+                <FieldLabel>Date of birth</FieldLabel>
+                <Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
+              </Field>
+            )}
+            <div className="flex gap-2">
+              <Button type="submit" size="sm" disabled={busy}>
+                {busy ? 'Saving…' : 'Save'}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={busy}
+                onClick={() => setEditing(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <div className="grid flex-1 gap-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-lg font-semibold">{me.user.fullName}</span>
+              <RoleBadge role={me.user.role} />
+              {isDoctor &&
+                (verified ? (
+                  <Badge
+                    variant="outline"
+                    className="gap-1 border border-success-border bg-success-bg text-success-fg"
+                  >
+                    <BadgeCheckIcon aria-hidden />
+                    Verified
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className="gap-1 border border-warning-border bg-warning-bg text-warning-fg"
+                  >
+                    <ClockIcon aria-hidden />
+                    Verification pending
+                  </Badge>
+                ))}
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                className="ml-auto"
+                onClick={startEdit}
+              >
+                <PencilIcon /> Edit
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">{me.user.email}</p>
+            {me.user.phone && <p className="text-sm text-muted-foreground">{me.user.phone}</p>}
+            {isDoctor && d && (d.medicalCouncil || d.registrationNumber) && (
+              <p className="text-sm text-muted-foreground">
+                {[d.medicalCouncil, d.registrationNumber && `Reg. No. ${d.registrationNumber}`]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+            )}
+            {!isDoctor && p?.dob && (
+              <p className="text-sm text-muted-foreground">Born {fmtDate(p.dob)}</p>
+            )}
+            <div className="mt-1.5 flex flex-wrap gap-1.5 text-xs">
+              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
+                <CalendarIcon className="size-3" aria-hidden />
+                Joined {fmtDate(me.user.createdAt)}
+              </span>
+              {lastUpdated && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
+                  <ClockIcon className="size-3" aria-hidden />
+                  Updated {fmtDateTime(lastUpdated)}
+                </span>
+              )}
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground">{me.user.email}</p>
-          {isDoctor && d && (d.medicalCouncil || d.registrationNumber) && (
-            <p className="text-sm text-muted-foreground">
-              {[d.medicalCouncil, d.registrationNumber && `Reg. No. ${d.registrationNumber}`]
-                .filter(Boolean)
-                .join(' · ')}
-            </p>
-          )}
-          {!isDoctor && me.patientProfile?.dob && (
-            <p className="text-sm text-muted-foreground">Born {me.patientProfile.dob}</p>
-          )}
-        </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -276,7 +442,17 @@ function PatientForm({ me, onSaved }: { me: Me; onSaved: () => Promise<void> }) 
       {error && <Notice kind="error">{error}</Notice>}
       {ok && <Notice kind="success">Saved.</Notice>}
       <FieldGroup>
-        <TextField label="Date of birth" type="date" required value={f.dob} onChange={set('dob')} />
+        {/* DOB is edited from the identity card above once the profile exists;
+            shown here only for first-time setup. */}
+        {!p && (
+          <TextField
+            label="Date of birth"
+            type="date"
+            required
+            value={f.dob}
+            onChange={set('dob')}
+          />
+        )}
         <Field>
           <FieldLabel htmlFor={genderId}>Gender</FieldLabel>
           <Select value={f.gender} onValueChange={(v) => v && set('gender')(v)}>

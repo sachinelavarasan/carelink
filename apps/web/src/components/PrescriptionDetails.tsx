@@ -1,14 +1,24 @@
 import type { PrescriptionView } from '@carelink/shared';
 import { useQuery } from '@tanstack/react-query';
-import { FileTextIcon } from 'lucide-react';
+import { CalendarPlusIcon, FileTextIcon } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Notice } from './Notice';
 import { Spinner } from './Spinner';
-import { Button } from './ui/button';
+import { Button, buttonVariants } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from './ui/table';
 import { cn } from '@/lib/utils';
 import { apiGet, errMessage, isStatus, openPdf } from '../lib/api';
-import { fmtDateTime } from '../lib/format';
+import { useAuth } from '../lib/auth';
+import { fmtDateTime, isoDate } from '../lib/format';
 
 function Section({
   title,
@@ -34,6 +44,10 @@ function Section({
  *  the full consultation record. Used on the prescription page and inline in
  *  the appointment / medical-history expanders. */
 export function PrescriptionDetails({ rx }: { rx: PrescriptionView }) {
+  const { me } = useAuth();
+  const canBookFollowUp =
+    me?.user.role === 'PATIENT' && rx.followUpDate != null && rx.followUpDate >= isoDate(new Date());
+
   return (
     <div className="grid gap-4">
       <div className="rounded-lg border border-border bg-card p-4 text-sm">
@@ -57,19 +71,36 @@ export function PrescriptionDetails({ rx }: { rx: PrescriptionView }) {
         <Section title="Diagnosis">{rx.diagnosis}</Section>
 
         <Section title="Rx" className="sm:col-span-2 lg:col-span-3">
-          <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {rx.items.map((it) => (
-              <li key={it.id} className="rounded-md border border-border p-2">
-                <span className="font-medium">
-                  {[it.drugName, it.strength, it.form].filter(Boolean).join(' ')}
-                </span>
-                <span className="block text-muted-foreground">
-                  {it.frequency} · {it.durationDays} day{it.durationDays === 1 ? '' : 's'}
-                  {it.instructions ? ` · ${it.instructions}` : ''}
-                </span>
-              </li>
-            ))}
-          </ol>
+          <div className="overflow-hidden rounded-md border border-border bg-card [&_tbody_td]:py-2.5 [&_tbody_tr:nth-child(even)]:bg-muted/10 [&_thead_th]:bg-muted/60 [&_thead_th]:text-[0.7rem] [&_thead_th]:font-semibold [&_thead_th]:uppercase [&_thead_th]:tracking-wider [&_thead_th]:text-muted-foreground">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-8">#</TableHead>
+                  <TableHead>Medicine</TableHead>
+                  <TableHead>Frequency</TableHead>
+                  <TableHead className="text-right">Duration</TableHead>
+                  <TableHead>Instructions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rx.items.map((it, i) => (
+                  <TableRow key={it.id}>
+                    <TableCell className="text-muted-foreground tabular-nums">{i + 1}</TableCell>
+                    <TableCell className="font-medium">
+                      {[it.drugName, it.strength, it.form].filter(Boolean).join(' ')}
+                    </TableCell>
+                    <TableCell>{it.frequency}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {it.durationDays} day{it.durationDays === 1 ? '' : 's'}
+                    </TableCell>
+                    <TableCell className="whitespace-normal text-muted-foreground">
+                      {it.instructions || '—'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </Section>
 
         <Section title="Advice">{rx.advice}</Section>
@@ -78,9 +109,18 @@ export function PrescriptionDetails({ rx }: { rx: PrescriptionView }) {
         <Section title="Drug categories">{rx.drugCategoryFlags.join(', ') || null}</Section>
       </div>
 
-      {rx.pdfReady && (
-        <div>
-          <PdfButton prescriptionId={rx.id} />
+      {(rx.pdfReady || canBookFollowUp) && (
+        <div className="flex flex-wrap items-center gap-2">
+          {rx.pdfReady && <PdfButton prescriptionId={rx.id} />}
+          {canBookFollowUp && (
+            <Link
+              className={cn(buttonVariants({ variant: 'outline' }), 'w-fit')}
+              to={`/book?doctorId=${rx.doctorId}&date=${rx.followUpDate}`}
+            >
+              <CalendarPlusIcon />
+              Book follow-up
+            </Link>
+          )}
         </div>
       )}
     </div>

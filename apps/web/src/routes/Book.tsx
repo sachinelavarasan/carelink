@@ -29,6 +29,9 @@ export default function Book() {
   const [params] = useSearchParams();
   const rescheduleId = params.get('reschedule');
   const doctorIdParam = params.get('doctorId');
+  // Optional follow-up target (YYYY-MM-DD) from a prescription — shifts the slot
+  // window so that date is in view.
+  const focusDateParam = params.get('date');
   const reasonId = useId();
 
   // Rescheduling keeps the original doctor — look it up from the appointment.
@@ -47,7 +50,20 @@ export default function Book() {
   const doctor = doctorQ.data;
 
   const from = isoDate(new Date());
-  const to = isoDate(new Date(Date.now() + 13 * 86_400_000));
+  // Default: the next two weeks. With a follow-up date, widen the window to a week
+  // past it so that day is in view (clamped to today … +59d, the slots endpoint's
+  // max range).
+  const focusDate = focusDateParam && focusDateParam >= from ? focusDateParam : null;
+  const to = focusDate
+    ? isoDate(
+        new Date(
+          Math.min(
+            Date.parse(`${focusDate}T00:00:00Z`) + 7 * 86_400_000,
+            Date.parse(`${from}T00:00:00Z`) + 59 * 86_400_000,
+          ),
+        ),
+      )
+    : isoDate(new Date(Date.now() + 13 * 86_400_000));
 
   const slotsQ = useQuery({
     queryKey: ['slots', doctor?.id, from, to],
@@ -116,6 +132,14 @@ export default function Book() {
             {doctor.fullName} · {doctor.specializations.join(', ')} · ₹{doctor.consultationFeeInr}
           </p>
 
+          {focusDate && (
+            <p className="mt-4 rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
+              Your prescription suggested a follow-up around{' '}
+              <span className="font-medium text-foreground">{fmtDayHeading(focusDate)}</span>. Pick
+              whichever slot works.
+            </p>
+          )}
+
           {error && (
             <div className="mt-4">
               <Notice kind="error">{error}</Notice>
@@ -135,8 +159,20 @@ export default function Book() {
 
           <div className="mt-4 grid gap-4">
             {days.map(([day, slots]) => (
-              <div key={day}>
-                <h3 className="mb-1.5 text-sm font-medium">{fmtDayHeading(slots[0].start)}</h3>
+              <div
+                key={day}
+                className={
+                  day === focusDate ? 'rounded-lg bg-muted/60 p-2 ring-1 ring-border' : undefined
+                }
+              >
+                <h3 className="mb-1.5 text-sm font-medium">
+                  {fmtDayHeading(slots[0].start)}
+                  {day === focusDate && (
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                      · suggested follow-up
+                    </span>
+                  )}
+                </h3>
                 <div className="flex flex-wrap gap-1.5">
                   {slots.map((s) => (
                     <Button

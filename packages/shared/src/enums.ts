@@ -27,6 +27,14 @@ export const NotificationChannel = {
 } as const;
 export type NotificationChannel = (typeof NotificationChannel)[keyof typeof NotificationChannel];
 
+/** How the patient rates their complaint on the pre-consultation intake form. */
+export const IntakeSeverity = {
+  MILD: 'MILD',
+  MODERATE: 'MODERATE',
+  SEVERE: 'SEVERE',
+} as const;
+export type IntakeSeverity = (typeof IntakeSeverity)[keyof typeof IntakeSeverity];
+
 /** Drug categories that need an explicit flag on a teleconsultation prescription. */
 export const DrugCategoryFlag = {
   OTC: 'OTC',

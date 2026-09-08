@@ -113,7 +113,8 @@ enums (`AppointmentStatus`, `UserRole`, …), inferred types used by all three a
 
 ```
 User            id, role(PATIENT|DOCTOR|ADMIN), email, passwordHash,
-                emailVerifiedAt?, phone, fullName, avatarUrl, createdAt, disabledAt
+                emailVerifiedAt?, phone, fullName, avatarUrl, createdAt, updatedAt,
+                disabledAt
 
 AuthToken       userId→User, kind(EMAIL_VERIFY|PASSWORD_RESET),
                 tokenHash, expiresAt, consumedAt?, createdAt
@@ -135,6 +136,17 @@ Appointment     id, patientId, doctorId, scheduledStart, scheduledEnd,
                 reasonForVisit, consentAcceptedAt, identityVerifiedAt,
                 cancelledBy?, cancelReason?, createdAt
 
+AppointmentIntake  appointmentId→Appointment (1:1), chiefComplaint, symptomsStarted?,
+                   severity?(MILD|MODERATE|SEVERE), currentMedications?, allergies?,
+                   additionalNotes?, updatedAt
+                   # patient's pre-consultation questionnaire; patient-editable
+                   # until the consult, doctor reads it while writing the record
+
+PatientVitals   patientId→User, recordedAt, weightKg?, systolic?, diastolic?,
+                heartRate?, bloodSugarMgDl?, temperatureC?, notes?, createdAt
+                # patient self-logs readings over time; a doctor they've seen can
+                # read them. Index (patientId, recordedAt).
+
 ChatThread      appointmentId→Appointment (1:1), opensAt, closesAt
 Message         threadId→ChatThread, senderId→User, body, attachmentKey?,
                 sentAt, readAt          # INSERT here → Supabase Realtime pushes it
@@ -148,6 +160,12 @@ Prescription     id, appointmentId, doctorId, patientId, issuedAt,
                  # pdfKey = Cloudinary public_id once uploaded.
 PrescriptionItem prescriptionId→Prescription, position, drugName, strength, form,
                  frequency, durationDays, instructions
+
+PrescriptionTemplate  doctorId→User, name, symptoms?, diagnosis?, advice?,
+                      followUpDays?, drugCategoryFlags[], items(jsonb medicine[]),
+                      createdAt, updatedAt
+                      # a doctor's reusable prescription skeleton, applied into a
+                      # new draft client-side. Not linked to an appointment.
 
 VideoSession    id, appointmentId→Appointment (1:1), roomName (unique,
                 unguessable), startedAt?, endedAt?, createdAt
@@ -237,13 +255,15 @@ short-lived signed URL and streams them (the browser never hits Cloudinary).
 
 - `AuthModule` — register / verify / login / refresh / forgot / reset, `GET /me`, `JwtAuthGuard`, `RolesGuard`
 - `MailModule` — Nodemailer transport + templated senders
-- `UsersModule` — `GET /me`, `PatientProfile` / `DoctorProfile` upsert, `DELETE /me` (DPDP hard delete; PATIENT only — password + typed `DELETE` confirmation; removes the user and every referencing row in a transaction)
-- `AvailabilityModule` — doctor discovery (`GET /doctors` with `q` / `specialization` / `sort`, `GET /doctors/specializations`, `GET /doctors/:id`, `GET /me/doctors`), doctor rules/exceptions, `GET /doctors/:id/slots?from&to`. Literal routes are declared before `:id` so `/doctors/specializations` and `/me/doctors` win.
+- `UsersModule` — `GET /me`, `PATCH /me` (own name / phone; bumps `users.updatedAt`), `PatientProfile` / `DoctorProfile` upsert, `GET /me/export` (DPDP right to access; PATIENT only — profile + appointments + finalised prescriptions + sent messages + document metadata, streamed as a JSON attachment; doctor-only clinical `notes` excluded), `DELETE /me` (DPDP hard delete; PATIENT only — password + typed `DELETE` confirmation; removes the user and every referencing row in a transaction)
+- `AvailabilityModule` — doctor discovery (`GET /doctors` with `q` / `specialization` / `sort`, `GET /doctors/specializations`, `GET /doctors/:id`, `GET /me/doctors`), doctor rules/exceptions (single-date and `.../exceptions/range?from&to` for a holiday / leave block — expands to one exception row per date, ≤ 90, `range` route declared before `:id`), `GET /doctors/:id/slots?from&to`. Literal routes are declared before `:id` so `/doctors/specializations` and `/me/doctors` win.
 - `AppointmentsModule` — book, list, cancel, reschedule, identity-verified stamp
+- `IntakeModule` — `GET/PUT /appointments/:id/intake`: the patient's short pre-consultation questionnaire (1:1 with the appointment). Patient-only write, blocked once the consult is COMPLETED / CANCELLED; either participant can read. Doctor sees it inline on the prescription page.
+- `VitalsModule` — `GET/POST /me/vitals`, `DELETE /me/vitals/:id` (PATIENT); `GET /patients/:id/vitals` (DOCTOR, gated on a shared appointment). Self-logged vital signs over time; web renders the trend chart client-side.
 - `ChatModule` — `GET /appointments/:id/thread`, `GET /threads/:id/messages`, `POST /messages`; identity-verified stamp lives on `AppointmentsModule`. v1 delivery is client polling.
 - `VideoModule` — `GET /appointments/:id/video` (creates the `VideoSession` lazily, returns domain + room + `canJoin` for the window), `POST …/video/start` (stamps `startedAt`, notifies the patient when the doctor starts), `POST …/video/end`. Media is peer-to-peer via Jitsi — never through the API.
 - `StorageModule` — Cloudinary wrapper (`@Global`): upload + signed-URL fetch of private files. No-op when `CLOUDINARY_URL` is unset.
-- `PrescriptionsModule` — `POST /prescriptions` (draft), `PATCH /prescriptions/:id`, `POST /prescriptions/:id/finalize`, `GET /prescriptions/:id`, `GET /prescriptions/:id/pdf` (StreamableFile), `GET /appointments/:id/prescription`, `GET /medical-history` (patient), `GET /patients/:id/history` (doctor, own appointments only)
+- `PrescriptionsModule` — `POST /prescriptions` (draft), `PATCH /prescriptions/:id`, `POST /prescriptions/:id/finalize`, `GET /prescriptions/:id`, `GET /prescriptions/:id/pdf` (StreamableFile), `GET /appointments/:id/prescription`, `GET /medical-history` (patient), `GET /patients/:id/history` (doctor, own appointments only). Also `GET/POST/PATCH/DELETE /me/prescription-templates[/:id]` (`PrescriptionTemplatesService`, doctor-only, owner-scoped) — reusable prescription skeletons the web applies into a draft client-side.
 - `DocumentsModule` — signed upload/download, list by patient (Tier 2; reuses `StorageModule`)
 - `NotificationsModule` — Expo push, email senders
 - `JobsModule` — `POST /jobs/run` (cron-key-protected): due reminders + keep-alive
@@ -351,6 +371,7 @@ private, signed URLs ≤ 5 min, UUID keys.
 - Dependabot; **Sentry** for runtime errors — env-gated (`SENTRY_DSN` / `VITE_SENTRY_DSN`), a global `SentryExceptionFilter` reports 5xx then re-delegates. ✅
 - Backups: nightly `pg_dump --format=custom` → gzip → Cloudflare R2 via `.github/workflows/backup.yml` (00:47 IST), 30-day prune; test-restore monthly (manual). ✅ (needs `DIRECT_URL` + R2 secrets)
 - DPDP data-deletion: `DELETE /me` — **hard delete**, PATIENT only, password + typed `DELETE` confirmation; transaction removes messages / prescriptions / appointments / documents then the user (rest cascade). Drops the shared consult record for the counterparty too. Doctor removal stays an ops task. ✅
+- DPDP data-access: `GET /me/export` — PATIENT only; the patient's full record (profile, appointments, finalised prescriptions, sent messages, document metadata) as a downloadable JSON file. Doctor-only clinical `notes` excluded. ✅
 
 ## 14. Module priority roadmap
 
@@ -370,8 +391,8 @@ already built or scheduled in the milestones below.
 | User + patient + doctor profiles | Common profile, patient medical basics + emergency contact, doctor qualifications / council / reg. number / fee | M1 ✅ |
 | Doctor discovery | `GET /doctors` search (name / keyword / specialization; sort by name / fee / experience, verified only), `GET /doctors/specializations`, public profile, `GET /me/doctors` (re-book a doctor already seen). Web: `/doctors`, `/doctors/:id`; booking is doctor-scoped via `?doctorId=`. | M7 ✅ |
 | Specialization | Free-text array on `DoctorProfile`, surfaced as the discovery filter. No taxonomy table / symptom mapping yet (Tier 2). | M7 ✅ |
-| Doctor availability | Weekly `AvailabilityRule` + date `AvailabilityException`, IST slot expansion | M2 ✅ |
-| Appointment management | Book (consent + slot re-validation), list, cancel, reschedule, statuses, 24 h / 15 min reminders, list + calendar views | M2 ✅ |
+| Doctor availability | Weekly `AvailabilityRule` + date `AvailabilityException`, IST slot expansion. Date-range close (holiday / leave) via `PUT/DELETE /me/availability/exceptions/range`; the UI folds consecutive closed days into one block. | M2 ✅ |
+| Appointment management | Book (consent + slot re-validation), list, cancel, reschedule, statuses, 24 h / 15 min reminders, list + calendar views. Patient can book a follow-up straight from a finalised prescription (`/book?doctorId=&date=` centres the slot window on `Prescription.followUpDate`). | M2 ✅ |
 | Chat consultation | Thread window, `POST /messages`, history + read receipts, identity-verified stamp, message notifications. **v1 delivery = polling; Supabase Realtime + `messages` RLS + attachments deferred.** | M3 ✅ (polling) |
 | Video consultation | Jitsi web embed, one room per appointment, join window, start/end tracking, `video_started` push. Mobile deferred. | M6 ✅ (web) |
 | Consultation notes | Symptoms, clinical notes (doctor-only), diagnosis, advice, follow-up — fields on the prescription | M4 ✅ |
@@ -394,6 +415,9 @@ pilot, before scale.
 | Reviews & ratings | Trust signal; gate on a COMPLETED consultation, one review per appointment | `reviews` table, average + count on the doctor profile, admin moderation |
 | In-app notification centre | Push + email already cover the essentials | `Notification` rows already exist — add a list + read/unread UI |
 | Consultation-room polish | Basic chat works without it | Timer, presence, typing indicator, online/offline status |
+| Pre-consultation intake form | Booking only captures a free-text `reasonForVisit` | ✅ `IntakeModule` — structured questionnaire (chief complaint, onset, severity, current meds, allergies, notes) per appointment; migration `0007` |
+| Patient vitals log | `PatientProfile` holds a single height / weight | ✅ `VitalsModule` — `patient_vitals` time-series (weight, BP, HR, blood sug, temperature); patient logs + deletes, seen doctors read; web `/vitals` with a client-side trend chart; migration `0008` |
+| Prescription templates | Doctors retype common prescriptions each time | ✅ `prescription_templates` (per-doctor, owner-scoped CRUD); web `/prescription-templates` manager + a "Start from a template" picker on the prescription form; migration `0009` |
 | Account-settings polish | The minimal profile is enough for the pilot | Avatar upload, contact fields, account-status self-service |
 
 ### Tier 3 — Low (build last)

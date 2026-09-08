@@ -14,11 +14,13 @@ import MedicalHistory from './routes/MedicalHistory';
 import MyDoctors from './routes/MyDoctors';
 import Patients from './routes/Patients';
 import Prescription from './routes/Prescription';
+import PrescriptionTemplates from './routes/PrescriptionTemplates';
 import Profile from './routes/Profile';
 // import Register from './routes/Register'; // self-signup hidden for now
 import ResetPassword from './routes/ResetPassword';
 import VerifyEmail from './routes/VerifyEmail';
 import VideoCall from './routes/VideoCall';
+import Vitals from './routes/Vitals';
 
 const ChartPreview = lazy(() => import('./routes/__ChartPreview'));
 
@@ -57,10 +59,12 @@ export default function App() {
         element={protect(<Prescription />)}
       />
       <Route path="/history" element={protect(<MedicalHistory />)} />
+      <Route path="/vitals" element={protect(<Vitals />)} />
       <Route path="/my-doctors" element={protect(<MyDoctors />)} />
       <Route path="/my-doctors/:doctorId" element={protect(<MedicalHistory />)} />
       <Route path="/patients" element={protect(<Patients />)} />
       <Route path="/patients/:patientId/history" element={protect(<MedicalHistory />)} />
+      <Route path="/prescription-templates" element={protect(<PrescriptionTemplates />)} />
       <Route path="/doctors" element={protect(<Doctors />)} />
       <Route path="/doctors/:id" element={protect(<DoctorProfile />)} />
       <Route path="/book" element={protect(<Book />)} />
