@@ -1,0 +1,40 @@
+import type { ReactNode } from 'react';
+import { KeyboardAvoidingView, Platform, Text, View } from 'react-native';
+
+import { Screen } from '@/components/Screen';
+import { useTheme } from '@/theme/ThemeProvider';
+import { ThemeToggle } from '@/theme/ThemeToggle';
+
+/** Centered, branded frame shared by every /(auth) screen. */
+export function AuthShell({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+}) {
+  const { color } = useTheme();
+  return (
+    <Screen center contentStyle={{ paddingHorizontal: 24 }}>
+      <View style={{ position: 'absolute', right: 24, top: 12 }}>
+        <ThemeToggle />
+      </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ gap: 14 }}
+      >
+        <View style={{ gap: 4, marginBottom: 4 }}>
+          <Text style={{ textAlign: 'center', fontSize: 28, fontWeight: '700', color: color.foreground }}>
+            CareLink
+          </Text>
+          <Text style={{ textAlign: 'center', fontSize: 14, color: color['muted-foreground'] }}>
+            {subtitle ?? title}
+          </Text>
+        </View>
+        {children}
+      </KeyboardAvoidingView>
+    </Screen>
+  );
+}

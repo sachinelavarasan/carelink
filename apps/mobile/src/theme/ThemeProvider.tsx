@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { THEME_STORAGE_KEY, type ThemeName, tokens } from '@carelink/theme';
-import { colorScheme } from 'nativewind';
+import * as SystemUI from 'expo-system-ui';
 import {
   createContext,
   type ReactNode,
@@ -13,7 +13,7 @@ import {
 
 interface ThemeContextValue {
   theme: ThemeName;
-  /** Raw hex map for imperative colour props (ActivityIndicator, placeholders…). */
+  /** Raw hex map for every colour prop — backgrounds, text, borders, icons. */
   color: (typeof tokens)['light'];
   setTheme: (t: ThemeName) => void;
   toggle: () => void;
@@ -27,21 +27,26 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     (async () => {
       const stored = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-      const next: ThemeName = stored === 'dark' ? 'dark' : 'light';
-      colorScheme.set(next);
-      setThemeState(next);
+      setThemeState(stored === 'dark' ? 'dark' : 'light');
     })();
   }, []);
 
+  useEffect(() => {
+    void SystemUI.setBackgroundColorAsync(tokens[theme].background);
+  }, [theme]);
+
   const setTheme = useCallback((t: ThemeName) => {
-    colorScheme.set(t);
     setThemeState(t);
     void AsyncStorage.setItem(THEME_STORAGE_KEY, t);
   }, []);
 
   const toggle = useCallback(
-    () => setTheme(colorScheme.get() === 'dark' ? 'light' : 'dark'),
-    [setTheme],
+    () => setThemeState((prev) => {
+      const next: ThemeName = prev === 'dark' ? 'light' : 'dark';
+      void AsyncStorage.setItem(THEME_STORAGE_KEY, next);
+      return next;
+    }),
+    [],
   );
 
   const value = useMemo<ThemeContextValue>(
