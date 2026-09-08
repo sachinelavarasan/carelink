@@ -1,0 +1,74 @@
+# Ignore rules for the `eas build` project archive. When this file exists EAS
+# uses it INSTEAD OF every .gitignore in the repo, so it must re-list all the
+# junk/secret exclusions itself.
+#
+# The reason it exists: apps/mobile/google-services.json is dropped by
+# .gitignore (via `*service*.json`), so on a monorepo build EAS never uploads
+# it and the Android prebuild fails copying it into android/app/. Leaving it out
+# of this file lets it into the archive. It holds only public Firebase client
+# IDs (project/app id + a package/SHA-restricted key), not a real secret.
+# The genuinely sensitive *service*.json files are still excluded below.
+
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# JS / build outputs
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+.turbo/
+coverage/
+web-build/
+
+# native dirs — EAS runs its own prebuild
+android/
+ios/
+app-example/
+*.orig.*
+
+# signing / provisioning material
+*.jks
+*.keystore
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# env files — never upload
+.env
+.env.local
+.env.*.local
+.env*.local
+apps/*/.env
+!.env.example
+!apps/*/.env.example
+
+# expo
+.expo/
+
+# prisma local db
+apps/api/prisma/*.db
+
+# secrets that are NOT google-services.json
+play-console-services.json
+google-service-for-eas.json
+*firebase-adminsdk*.json
+
+# logs
+*.log
+npm-debug.log*
+
+# os / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# vcs / vercel
+.vercel/
+.git/

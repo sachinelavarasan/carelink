@@ -39,10 +39,10 @@ const config: ExpoConfig = {
   userInterfaceStyle: 'automatic',
   ios: {
     supportsTablet: true,
-    bundleIdentifier: isDev ? 'com.carelink.app.dev' : 'com.carelink.app',
+    bundleIdentifier: isDev ? 'com.sachinelavarasan.carelink.dev' : 'com.sachinelavarasan.carelink',
   },
   android: {
-    package: isDev ? 'com.carelink.app.dev' : 'com.carelink.app',
+    package: isDev ? 'com.sachinelavarasan.carelink.dev' : 'com.sachinelavarasan.carelink',
     googleServicesFile,
   },
   plugins: [
