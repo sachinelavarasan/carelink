@@ -1,4 +1,5 @@
 import { Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -9,14 +10,16 @@ import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/theme/ThemeProvider';
 
 export default function Profile() {
+  const router = useRouter();
   const { me, logout } = useAuth();
   const { color } = useTheme();
   const confirm = useConfirm();
 
   if (!me) return null;
 
-  const profileComplete =
-    me.user.role === 'DOCTOR' ? Boolean(me.doctorProfile) : Boolean(me.patientProfile);
+  const isDoctor = me.user.role === 'DOCTOR';
+
+  const profileComplete = isDoctor ? Boolean(me.doctorProfile) : Boolean(me.patientProfile);
 
   const signOut = async () => {
     if ((await confirm({ title: 'Sign out?', confirmLabel: 'Sign out', destructive: true })) !== false) {
@@ -49,10 +52,26 @@ export default function Profile() {
 
       {!profileComplete ? (
         <Notice tone="warning">
-          Your {me.user.role === 'DOCTOR' ? 'doctor' : 'patient'} profile is incomplete. Editing lands
-          in Phase 15 — finish it on the web app meanwhile.
+          Your {isDoctor ? 'doctor' : 'patient'} profile is incomplete. Editing lands in Phase 15 —
+          finish it on the web app meanwhile.
         </Notice>
       ) : null}
+
+      <View style={{ gap: 8 }}>
+        {isDoctor ? (
+          <Button
+            label="Prescription templates"
+            variant="outline"
+            onPress={() => router.push('/templates')}
+          />
+        ) : (
+          <Button
+            label="Medical history"
+            variant="outline"
+            onPress={() => router.push('/medical-history')}
+          />
+        )}
+      </View>
 
       <Button label="Sign out" variant="outline" onPress={signOut} />
     </Screen>
