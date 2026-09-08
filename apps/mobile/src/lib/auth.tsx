@@ -2,7 +2,9 @@ import type { AuthTokens, LoginInput, Me, RegisterInput } from '@carelink/shared
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { api } from './api';
-import { authToken } from './authToken';
+import { clearStoredToken, getStoredToken, setStoredToken } from './authToken';
+import { queryClient } from './queryClient';
+import { clearToken, onUnauthorized, setToken } from './tokenStore';
 
 type Status = 'loading' | 'authenticated' | 'anonymous';
 
@@ -21,22 +23,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<Status>('loading');
   const [me, setMe] = useState<Me | null>(null);
 
+  /** Wipe every trace of the session locally. Does NOT call the API. */
+  const clearSession = useCallback(() => {
+    clearToken();
+    void clearStoredToken();
+    queryClient.clear();
+    setMe(null);
+    setStatus('anonymous');
+  }, []);
+
   const reload = useCallback(async () => {
-    if (!(await authToken.getAccess())) {
-      setMe(null);
-      setStatus('anonymous');
+    const stored = await getStoredToken();
+    if (!stored) {
+      clearSession();
       return;
     }
+    setToken(stored);
     try {
       const { data } = await api.get<Me>('/me');
       setMe(data);
       setStatus('authenticated');
     } catch {
-      await authToken.clear();
-      setMe(null);
-      setStatus('anonymous');
+      clearSession();
     }
-  }, []);
+  }, [clearSession]);
+
+  // A 401 from anywhere means the 7-day token is gone — drop the session so the
+  // route guards bounce to sign-in.
+  useEffect(() => {
+    onUnauthorized(clearSession);
+  }, [clearSession]);
 
   useEffect(() => {
     void reload();
@@ -45,7 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(
     async (input: LoginInput) => {
       const { data } = await api.post<AuthTokens>('/auth/login', input);
-      await authToken.set({ accessToken: data.accessToken });
+      setToken(data.accessToken);
+      await setStoredToken(data.accessToken);
       await reload();
     },
     [reload],
@@ -58,10 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     await api.post('/auth/logout', {}).catch(() => undefined);
-    await authToken.clear();
-    setMe(null);
-    setStatus('anonymous');
-  }, []);
+    clearSession();
+  }, [clearSession]);
 
   const value = useMemo<AuthContextValue>(
     () => ({ status, me, login, register, logout, reload }),
