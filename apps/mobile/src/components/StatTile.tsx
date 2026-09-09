@@ -2,7 +2,9 @@ import type { ComponentProps } from 'react';
 import { Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
+import { mono } from '@/lib/fonts';
 import { useTheme } from '@/theme/ThemeProvider';
+import { radius, space, type as t } from '@/theme/tokens';
 
 export function StatTile({
   icon,
@@ -21,20 +23,20 @@ export function StatTile({
       style={{
         flexGrow: 1,
         flexBasis: '47%',
-        borderRadius: 12,
+        borderRadius: radius.md + 2,
         borderWidth: 1,
         borderColor: color.border,
         backgroundColor: color.card,
-        padding: 14,
-        gap: 2,
+        padding: space.md,
+        gap: 3,
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-        <Ionicons name={icon} size={15} color={color['muted-foreground']} />
-        <Text style={{ fontSize: 13, color: color['muted-foreground'] }}>{label}</Text>
-      </View>
-      <Text style={{ fontSize: 22, fontWeight: '700', color: color.foreground }}>{value}</Text>
-      {hint ? <Text style={{ fontSize: 11, color: color['muted-foreground'] }}>{hint}</Text> : null}
+      <Ionicons name={icon} size={16} color={color.primary} />
+      <Text style={[mono('600'), { fontSize: 20, color: color.foreground }]}>{value}</Text>
+      <Text style={[t.label, { color: color['muted-foreground'] }]}>{label}</Text>
+      {hint ? (
+        <Text style={{ fontSize: 11, color: color['muted-foreground'] }}>{hint}</Text>
+      ) : null}
     </View>
   );
 }

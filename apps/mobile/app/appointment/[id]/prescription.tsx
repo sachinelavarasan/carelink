@@ -1,11 +1,11 @@
-import type { CreatePrescriptionInput, MedicineItem } from '@carelink/shared';
+import type { CreatePrescriptionInput } from '@carelink/shared';
 import { useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { Button } from '@/components/Button';
-import { RowDatePicker } from '@/components/RowDatePicker';
+import { Card } from '@/components/Card';
 import { Field } from '@/components/Field';
 import { FlagChips } from '@/components/FlagChips';
 import { IntakePanel } from '@/components/IntakePanel';
@@ -13,13 +13,14 @@ import {
   MedicineRowsEditor,
   blankMedicine,
   fromMedicineItem,
-  medicineLabel,
   toMedicineItems,
   type MedicineDraft,
 } from '@/components/MedicineRowsEditor';
 import { Notice } from '@/components/Notice';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { RowSelect } from '@/components/RowSelect';
+import { SectionLabel } from '@/components/SectionLabel';
 import { showToast } from '@/components/ToastMessage';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useTemplates } from '@/hooks/usePrescriptionTemplates';
@@ -33,13 +34,17 @@ import { appointmentKeys } from '@/hooks/useAppointments';
 import { api, errMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { isoDate } from '@/lib/format';
-import { useTheme } from '@/theme/ThemeProvider';
+
+const DAY = 86_400_000;
+const FOLLOWUP_OPTIONS = [
+  { label: 'No follow-up', value: '' },
+  ...[3, 5, 7, 10, 14, 21, 30, 45, 60, 90].map((n) => ({ label: `${n} days`, value: String(n) })),
+];
 
 export default function PrescriptionForm() {
   const { id: appointmentId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const qc = useQueryClient();
-  const { color } = useTheme();
   const { me } = useAuth();
   const confirm = useConfirm();
 
@@ -80,10 +85,6 @@ export default function PrescriptionForm() {
     () => (templates.data ?? []).map((t) => ({ label: t.name, value: t.id })),
     [templates.data],
   );
-  const favoriteOptions = useMemo(
-    () => favorites.map((m, i) => ({ label: medicineLabel(m), value: String(i) })),
-    [favorites],
-  );
 
   function applyTemplate(templateId: string) {
     const t = templates.data?.find((x) => x.id === templateId);
@@ -96,12 +97,6 @@ export default function PrescriptionForm() {
     if (t.followUpDays != null) {
       setFollowUpDate(isoDate(new Date(Date.now() + t.followUpDays * 86_400_000)));
     }
-  }
-
-  function addFavorite(index: string) {
-    const m: MedicineItem | undefined = favorites[Number(index)];
-    if (!m) return;
-    setItems((rs) => [...rs.filter((r) => r.drugName.trim() || r.frequency.trim()), fromMedicineItem(m)]);
   }
 
   function body(): Omit<CreatePrescriptionInput, 'appointmentId'> {
@@ -171,9 +166,16 @@ export default function PrescriptionForm() {
 
   const medCount = toMedicineItems(items).length;
 
+  const followUpDays = followUpDate
+    ? String(Math.max(0, Math.round((Date.parse(followUpDate) - Date.parse(isoDate(new Date()))) / DAY)))
+    : '';
+  const setFollowUpInDays = (v: string) =>
+    setFollowUpDate(v ? isoDate(new Date(Date.now() + Number(v) * DAY)) : '');
+
   return (
     <>
-      <Stack.Screen options={{ headerShown: true, title: 'Prescription', headerBackTitle: 'Back' }} />
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader title="Prescription" />
       <Screen contentStyle={{ gap: 14 }}>
         <IntakePanel appointmentId={appointmentId} />
 
@@ -195,66 +197,54 @@ export default function PrescriptionForm() {
             {error ? <Notice tone="danger">{error}</Notice> : null}
 
             {templateOptions.length > 0 ? (
-              <RowSelect
-                label="Start from a template"
-                sheetTitle="Templates"
-                placeholder="Choose a template…"
-                options={templateOptions}
-                value=""
-                onChange={(v) => v && applyTemplate(v)}
-              />
+              <Card style={{ paddingVertical: 0 }}>
+                <RowSelect
+                  label="Start from a template"
+                  sheetTitle="Templates"
+                  placeholder="Choose a template…"
+                  options={templateOptions}
+                  value=""
+                  onChange={(v) => v && applyTemplate(v)}
+                  showDivider={false}
+                />
+              </Card>
             ) : null}
 
-            <Text style={sectionStyle(color)}>Assessment</Text>
-            <Field label="Symptoms" multiline value={symptoms} onChangeText={setSymptoms} />
-            <Field label="Diagnosis *" multiline value={diagnosis} onChangeText={setDiagnosis} />
+            <SectionLabel first>Symptoms</SectionLabel>
+            <Field value={symptoms} onChangeText={setSymptoms} placeholder="e.g. Cough x2w, wheeze at night" />
 
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={sectionStyle(color)}>Medicines{medCount ? ` · ${medCount}` : ''}</Text>
-            </View>
-            {favoriteOptions.length > 0 ? (
-              <RowSelect
-                sheetTitle="Regular medicines"
-                placeholder="Add from your regular medicines…"
-                options={favoriteOptions}
-                value=""
-                onChange={(v) => v && addFavorite(v)}
-              />
-            ) : null}
-            <MedicineRowsEditor rows={items} onChange={setItems} />
+            <SectionLabel>Diagnosis</SectionLabel>
+            <Field value={diagnosis} onChangeText={setDiagnosis} placeholder="Required" />
 
-            <Text style={sectionStyle(color)}>Plan</Text>
-            <Field label="Advice" multiline value={advice} onChangeText={setAdvice} />
+            <SectionLabel>{medCount ? `Medicines · ${medCount}` : 'Medicines'}</SectionLabel>
+            <MedicineRowsEditor rows={items} onChange={setItems} favorites={favorites} />
+
+            <SectionLabel>Advice</SectionLabel>
+            <Field label="For the patient" multiline value={advice} onChangeText={setAdvice} />
             <Field
-              label="Clinical notes (not shown to the patient)"
+              label="Clinical notes (private)"
               multiline
               value={notes}
               onChangeText={setNotes}
             />
-            <RowDatePicker
-              label="Follow-up date"
-              value={followUpDate}
-              onChange={setFollowUpDate}
-              minimumDate={new Date()}
-              placeholder="Optional"
-            />
 
-            <View style={{ gap: 6 }}>
-              <Text style={{ fontSize: 13, fontWeight: '500', color: color.foreground }}>
-                Drug categories
-              </Text>
-              <FlagChips value={flags} onChange={setFlags} />
-            </View>
-
-            <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
-              <Button
-                label="Save draft"
-                variant="outline"
-                busy={busy}
-                onPress={saveDraft}
-                style={{ flex: 1 }}
+            <SectionLabel>Follow-up and flags</SectionLabel>
+            <Card style={{ paddingVertical: 0 }}>
+              <RowSelect
+                label="Follow-up in"
+                sheetTitle="Follow-up"
+                placeholder="No follow-up"
+                options={FOLLOWUP_OPTIONS}
+                value={followUpDays}
+                onChange={setFollowUpInDays}
+                showDivider={false}
               />
-              <Button label="Issue" busy={busy} onPress={issue} style={{ flex: 1 }} />
+            </Card>
+            <FlagChips value={flags} onChange={setFlags} />
+
+            <View style={{ gap: 8, marginTop: 6 }}>
+              <Button label="Finalize & share" busy={busy} onPress={issue} />
+              <Button label="Save draft" variant="ghost" busy={busy} onPress={saveDraft} />
             </View>
           </>
         )}
@@ -262,12 +252,3 @@ export default function PrescriptionForm() {
     </>
   );
 }
-
-const sectionStyle = (color: ReturnType<typeof useTheme>['color']) => ({
-  fontSize: 12,
-  fontWeight: '700' as const,
-  textTransform: 'uppercase' as const,
-  letterSpacing: 0.5,
-  color: color['muted-foreground'],
-  marginTop: 8,
-});

@@ -37,7 +37,7 @@ export default function Login() {
   };
 
   return (
-    <AuthShell title="Sign in" subtitle="Sign in to your account">
+    <AuthShell title="Welcome back" subtitle="Sign in to your CareLink account">
       <FormErrorBanner message={serverError} />
 
       <Controller

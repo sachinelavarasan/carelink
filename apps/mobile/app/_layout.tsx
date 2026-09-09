@@ -20,7 +20,7 @@ import { NotificationProvider, useNotification } from '@/contexts/NotificationCo
 import { ConfirmProvider } from '@/hooks/useConfirm';
 import { useDisablePushToken, useRegisterPushToken } from '@/hooks/usePushToken';
 import { AuthProvider, useAuth } from '@/lib/auth';
-import { INTER_FONTS, applyInterFont } from '@/lib/fonts';
+import { INTER_FONTS, MONO_FONTS, applyInterFont } from '@/lib/fonts';
 import { pushPlatform } from '@/lib/push';
 import { persistOptions, queryClient } from '@/lib/queryClient';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
@@ -40,20 +40,23 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <ThemeProvider>
-          <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
-            <AuthProvider>
-              <NotificationProvider>
-                <BottomSheetModalProvider>
+        {/* Directly under GestureHandlerRootView + SafeAreaProvider, and above the
+            navigator, so @gorhom/bottom-sheet's portal isn't trapped behind a
+            react-native-screens native stack screen on the New Architecture. */}
+        <BottomSheetModalProvider>
+          <ThemeProvider>
+            <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
+              <AuthProvider>
+                <NotificationProvider>
                   <ConfirmProvider>
                     <PushSync />
                     <AppShell />
                   </ConfirmProvider>
-                </BottomSheetModalProvider>
-              </NotificationProvider>
-            </AuthProvider>
-          </PersistQueryClientProvider>
-        </ThemeProvider>
+                </NotificationProvider>
+              </AuthProvider>
+            </PersistQueryClientProvider>
+          </ThemeProvider>
+        </BottomSheetModalProvider>
       </GestureHandlerRootView>
     </SafeAreaProvider>
   );
@@ -85,7 +88,7 @@ function PushSync() {
 function AppShell() {
   const { status } = useAuth();
   const { color, theme } = useTheme();
-  const [fontsLoaded] = useFonts(INTER_FONTS);
+  const [fontsLoaded] = useFonts({ ...INTER_FONTS, ...MONO_FONTS });
 
   // Patch Text/TextInput to use Inter as soon as the faces are ready — before
   // the real UI renders (the splash is still up until `ready`).

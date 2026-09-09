@@ -1,17 +1,10 @@
 import type { ReactNode } from 'react';
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/theme/ThemeProvider';
+import { elevation, radius, space } from '@/theme/tokens';
 
 interface ModalCardProps {
   visible: boolean;
@@ -27,11 +20,7 @@ interface ModalCardProps {
   children: ReactNode;
 }
 
-/**
- * Centered or bottom-sheet modal card. Same surface as the Expensify app's
- * ModalCard, rebuilt on React Native's own `Modal` + an `expo-blur` backdrop
- * (no `react-native-modal` dependency).
- */
+/** Centered card or bottom sheet on a plain dimmed scrim (RN `Modal`). */
 export function ModalCard({
   visible,
   onClose,
@@ -42,7 +31,7 @@ export function ModalCard({
   closeDisabled,
   children,
 }: ModalCardProps) {
-  const { theme, color } = useTheme();
+  const { color } = useTheme();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const isSheet = presentation === 'sheet';
@@ -51,56 +40,52 @@ export function ModalCard({
     <Modal
       visible={visible}
       transparent
+      statusBarTranslucent
       animationType={isSheet ? 'slide' : 'fade'}
       onRequestClose={closeDisabled ? undefined : onClose}
     >
+      {/* scrim — tap to dismiss */}
       <Pressable
         onPress={closeDisabled ? undefined : onClose}
         style={{
           flex: 1,
+          backgroundColor: 'rgba(15,23,20,0.55)',
           justifyContent: isSheet ? 'flex-end' : 'center',
           alignItems: isSheet ? 'stretch' : 'center',
-          padding: isSheet ? 0 : 24,
+          padding: isSheet ? 0 : space.xxl,
         }}
       >
-        <BlurView
-          tint={theme === 'dark' ? 'dark' : 'light'}
-          intensity={30}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.35)',
-          }}
-        />
         <Pressable
           onPress={(e) => e.stopPropagation()}
-          style={{
-            width: isSheet ? '100%' : '100%',
-            maxWidth: isSheet ? undefined : 360,
-            maxHeight: height * 0.82,
-            backgroundColor: color.card,
-            borderWidth: 1,
-            borderColor: color.border,
-            borderRadius: isSheet ? 0 : 18,
-            borderTopLeftRadius: isSheet ? 22 : 18,
-            borderTopRightRadius: isSheet ? 22 : 18,
-            paddingHorizontal: 20,
-            paddingTop: isSheet ? 10 : 18,
-            paddingBottom: (isSheet ? 20 : 20) + (isSheet ? insets.bottom : 0),
-          }}
+          style={[
+            {
+              width: '100%',
+              maxWidth: isSheet ? undefined : 380,
+              maxHeight: height * 0.85,
+              backgroundColor: color.card,
+              borderTopLeftRadius: isSheet ? radius.lg + 6 : radius.lg,
+              borderTopRightRadius: isSheet ? radius.lg + 6 : radius.lg,
+              borderBottomLeftRadius: isSheet ? 0 : radius.lg,
+              borderBottomRightRadius: isSheet ? 0 : radius.lg,
+              borderWidth: isSheet ? 0 : 1,
+              borderColor: color.border,
+              paddingHorizontal: space.xl,
+              paddingTop: isSheet ? space.md : space.xl,
+              paddingBottom: space.xl + (isSheet ? insets.bottom : 0),
+            },
+            elevation.raised,
+          ]}
         >
           {isSheet ? (
             <View
               style={{
                 alignSelf: 'center',
-                width: 36,
+                width: 40,
                 height: 4,
                 borderRadius: 2,
-                backgroundColor: color.border,
-                marginBottom: 14,
+                backgroundColor: color['muted-foreground'],
+                opacity: 0.3,
+                marginBottom: space.md,
               }}
             />
           ) : null}
@@ -111,11 +96,11 @@ export function ModalCard({
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginBottom: 14,
-                gap: 8,
+                marginBottom: space.md,
+                gap: space.sm,
               }}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, flex: 1 }}>
                 <Text
                   numberOfLines={1}
                   style={{ fontSize: 17, fontWeight: '700', color: color.foreground, flexShrink: 1 }}
@@ -166,7 +151,14 @@ export function ModalCard({
           </ScrollView>
 
           {footer ? (
-            <View style={{ marginTop: 12, paddingTop: 14, borderTopWidth: 1, borderTopColor: color.border }}>
+            <View
+              style={{
+                marginTop: space.md,
+                paddingTop: space.md,
+                borderTopWidth: 1,
+                borderTopColor: color.border,
+              }}
+            >
               {footer}
             </View>
           ) : null}

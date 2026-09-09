@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-import { BottomSheet } from '@/components/BottomSheet';
+import { ModalCard } from '@/components/ModalCard';
 import { RowField } from '@/components/RowField';
 import type { SelectOption } from '@/components/Select';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -20,9 +20,9 @@ interface RowSelectProps<T extends string> {
 }
 
 /**
- * Row-styled select that opens a bottom-sheet list instead of an inline
- * dropdown — the in-card equivalent of `Select`. Ported from the Expensify
- * app's RowSelectInput.
+ * Row-styled select that opens a bottom-sheet list of options — the in-card
+ * equivalent of `Select`. Backed by `ModalCard` (RN `Modal`); `@gorhom/bottom-sheet`
+ * does not present on this RN version (see `BottomSheet.tsx`).
  */
 export function RowSelect<T extends string>({
   options,
@@ -60,9 +60,14 @@ export function RowSelect<T extends string>({
         </Text>
       </RowField>
 
-      <BottomSheet visible={open} onClose={() => setOpen(false)} title={sheetTitle ?? label}>
+      <ModalCard
+        visible={open}
+        onClose={() => setOpen(false)}
+        presentation="sheet"
+        title={sheetTitle ?? label}
+      >
         <View>
-          {options.map((opt) => {
+          {options.map((opt, idx) => {
             const active = opt.value === value;
             return (
               <Pressable
@@ -76,7 +81,7 @@ export function RowSelect<T extends string>({
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   paddingVertical: 14,
-                  borderBottomWidth: 1,
+                  borderBottomWidth: idx < options.length - 1 ? 1 : 0,
                   borderBottomColor: color.border,
                 }}
               >
@@ -94,7 +99,7 @@ export function RowSelect<T extends string>({
             );
           })}
         </View>
-      </BottomSheet>
+      </ModalCard>
     </>
   );
 }

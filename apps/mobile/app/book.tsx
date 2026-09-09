@@ -10,6 +10,7 @@ import { Card } from '@/components/Card';
 import { Field } from '@/components/Field';
 import { Notice } from '@/components/Notice';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { Switch } from '@/components/Switch';
 import { showToast } from '@/components/ToastMessage';
 import { useAppointment, useBookAppointment, useRescheduleAppointment } from '@/hooks/useAppointments';
@@ -17,6 +18,7 @@ import { useDoctor } from '@/hooks/useDoctors';
 import { useDoctorSlots } from '@/hooks/useAvailability';
 import { errMessage } from '@/lib/api';
 import { calendarTheme } from '@/lib/calendarTheme';
+import { mono } from '@/lib/fonts';
 import { fmtDayHeading, fmtTime, isoDate } from '@/lib/format';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -114,13 +116,8 @@ export default function Book() {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          title: rescheduleId ? 'Reschedule' : 'Book',
-          headerBackTitle: 'Back',
-        }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader title={rescheduleId ? 'Reschedule' : 'Book'} />
       <Screen contentStyle={{ gap: 12 }}>
         {doctorQ.isLoading || reschedApptQ.isLoading ? (
           <Text style={{ fontSize: 13, color: color['muted-foreground'] }}>Loading…</Text>
@@ -131,7 +128,8 @@ export default function Book() {
 
         {doctor ? (
           <Text style={{ fontSize: 13, color: color['muted-foreground'] }}>
-            {doctor.fullName} · {doctor.specializations.join(', ')} · ₹{doctor.consultationFeeInr}
+            {doctor.fullName} · {doctor.specializations.join(', ')} ·{' '}
+            <Text style={mono('500')}>₹{doctor.consultationFeeInr}</Text>
           </Text>
         ) : null}
 
@@ -179,7 +177,7 @@ export default function Book() {
                         key={s.start}
                         onPress={() => setPicked(s)}
                         style={{
-                          borderRadius: 8,
+                          borderRadius: 10,
                           borderWidth: 1,
                           paddingHorizontal: 12,
                           paddingVertical: 7,
@@ -188,11 +186,13 @@ export default function Book() {
                         }}
                       >
                         <Text
-                          style={{
-                            fontSize: 13,
-                            fontWeight: '600',
-                            color: active ? color['primary-foreground'] : color.foreground,
-                          }}
+                          style={[
+                            mono('500'),
+                            {
+                              fontSize: 13,
+                              color: active ? color['primary-foreground'] : color.foreground,
+                            },
+                          ]}
                         >
                           {fmtTime(s.start)}
                         </Text>

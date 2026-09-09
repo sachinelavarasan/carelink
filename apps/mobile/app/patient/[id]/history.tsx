@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { HistoryEntryCard } from '@/components/HistoryEntryCard';
 import { Notice } from '@/components/Notice';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { VitalsSummary } from '@/components/VitalsSummary';
 import { usePatientHistory } from '@/hooks/useMedicalHistory';
 import { usePatientVitals } from '@/hooks/useVitals';
@@ -20,9 +21,8 @@ export default function PatientHistory() {
 
   return (
     <>
-      <Stack.Screen
-        options={{ headerShown: true, title: name ?? 'Patient history', headerBackTitle: 'Back' }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader title={name ?? 'Patient history'} />
       <Screen
         contentStyle={{ gap: 12 }}
         onRefresh={() => {

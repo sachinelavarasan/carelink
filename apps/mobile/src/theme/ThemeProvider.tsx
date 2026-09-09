@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { THEME_STORAGE_KEY, type ThemeName, tokens } from '@carelink/theme';
+import { THEME_STORAGE_KEY, type ThemeName } from '@carelink/theme';
 import * as SystemUI from 'expo-system-ui';
 import {
   createContext,
@@ -11,10 +11,13 @@ import {
   useState,
 } from 'react';
 
+import { palette } from '@/theme/palette';
+
 interface ThemeContextValue {
   theme: ThemeName;
-  /** Raw hex map for every colour prop — backgrounds, text, borders, icons. */
-  color: (typeof tokens)['light'];
+  /** Raw hex map for every colour prop — backgrounds, text, borders, icons.
+   *  CareLink mobile's warm palette (see `@/theme/palette`). */
+  color: (typeof palette)['light'];
   setTheme: (t: ThemeName) => void;
   toggle: () => void;
 }
@@ -32,7 +35,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void SystemUI.setBackgroundColorAsync(tokens[theme].background);
+    void SystemUI.setBackgroundColorAsync(palette[theme].background);
   }, [theme]);
 
   const setTheme = useCallback((t: ThemeName) => {
@@ -50,7 +53,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ theme, color: tokens[theme], setTheme, toggle }),
+    () => ({ theme, color: palette[theme], setTheme, toggle }),
     [theme, setTheme, toggle],
   );
 

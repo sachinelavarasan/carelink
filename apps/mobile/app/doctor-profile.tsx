@@ -1,29 +1,21 @@
 import type { DoctorProfileInput } from '@carelink/shared';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 
 import { Button } from '@/components/Button';
 import { Field } from '@/components/Field';
-import {
-  MedicineRowsEditor,
-  fromMedicineItem,
-  toMedicineItems,
-  type MedicineDraft,
-} from '@/components/MedicineRowsEditor';
 import { Notice } from '@/components/Notice';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { showToast } from '@/components/ToastMessage';
 import { useUpsertDoctorProfile } from '@/hooks/useProfile';
 import { errMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { useTheme } from '@/theme/ThemeProvider';
 
 const parseList = (s: string) => s.split(',').map((v) => v.trim()).filter(Boolean);
 
 export default function EditDoctorProfile() {
   const router = useRouter();
-  const { color } = useTheme();
   const { me } = useAuth();
   const d = me?.doctorProfile;
   const save = useUpsertDoctorProfile();
@@ -42,9 +34,6 @@ export default function EditDoctorProfile() {
     clinicPhone: d?.clinicPhone ?? '',
     bio: d?.bio ?? '',
   });
-  const [meds, setMeds] = useState<MedicineDraft[]>(
-    (d?.favoriteMedicines ?? []).map(fromMedicineItem),
-  );
   const set = (k: keyof typeof f) => (v: string) => setF((s) => ({ ...s, [k]: v }));
 
   async function onSave() {
@@ -68,7 +57,9 @@ export default function EditDoctorProfile() {
       clinicMapUrl: f.clinicMapUrl || undefined,
       clinicPhone: f.clinicPhone || undefined,
       bio: f.bio || undefined,
-      favoriteMedicines: toMedicineItems(meds),
+      // managed on its own screen (app/medicines.tsx) — carry it through so a
+      // profile save doesn't wipe the list.
+      favoriteMedicines: d?.favoriteMedicines ?? [],
     };
     try {
       await save.mutateAsync(payload);
@@ -81,7 +72,8 @@ export default function EditDoctorProfile() {
 
   return (
     <>
-      <Stack.Screen options={{ headerShown: true, title: 'Doctor profile', headerBackTitle: 'Back' }} />
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader title="Doctor profile" />
       <Screen contentStyle={{ gap: 14 }}>
         {error ? <Notice tone="danger">{error}</Notice> : null}
 
@@ -122,17 +114,7 @@ export default function EditDoctorProfile() {
         <Field label="Clinic phone" keyboardType="phone-pad" value={f.clinicPhone} onChangeText={set('clinicPhone')} />
         <Field label="Short bio" multiline value={f.bio} onChangeText={set('bio')} />
 
-        <View style={{ gap: 4 }}>
-          <Text style={{ fontSize: 13, fontWeight: '500', color: color.foreground }}>
-            Regular medicines
-          </Text>
-          <Text style={{ fontSize: 12, color: color['muted-foreground'] }}>
-            Save medicines you prescribe often — drop them into a prescription in one tap.
-          </Text>
-        </View>
-        <MedicineRowsEditor rows={meds} onChange={setMeds} />
-
-        <Button label="Save profile" busy={save.isPending} onPress={onSave} />
+        <Button label="Save profile" busy={save.isPending} onPress={onSave} style={{ marginTop: 4 }} />
       </Screen>
     </>
   );

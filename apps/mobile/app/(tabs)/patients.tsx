@@ -1,11 +1,14 @@
 import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
+import { Avatar } from '@/components/Avatar';
 import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
 import { Notice } from '@/components/Notice';
 import { Screen } from '@/components/Screen';
+import { ScreenTitle } from '@/components/ScreenTitle';
 import { useMyPatients } from '@/hooks/useMedicalHistory';
+import { mono } from '@/lib/fonts';
 import { fmtDate } from '@/lib/format';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -16,7 +19,7 @@ export default function Patients() {
 
   return (
     <Screen contentStyle={{ gap: 12 }} onRefresh={() => void refetch()} refreshing={isRefetching}>
-      <Text style={{ fontSize: 20, fontWeight: '700', color: color.foreground }}>Patients</Text>
+      <ScreenTitle>Patients</ScreenTitle>
 
       {isLoading ? (
         <Text style={{ fontSize: 13, color: color['muted-foreground'] }}>Loading…</Text>
@@ -36,24 +39,20 @@ export default function Patients() {
               router.push({ pathname: '/patient/[id]/history', params: { id: p.id, name: p.fullName } })
             }
           >
-            <Card style={{ gap: 3 }}>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: color.foreground }}>
-                {p.fullName}
-              </Text>
-              <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-                {p.gender ? (
-                  <Text style={{ fontSize: 12, color: color['muted-foreground'] }}>{p.gender}</Text>
-                ) : null}
-                {p.dob ? (
-                  <Text style={{ fontSize: 12, color: color['muted-foreground'] }}>
-                    DOB {fmtDate(p.dob)}
-                  </Text>
-                ) : null}
+            <Card style={{ flexDirection: 'row', gap: 12 }}>
+              <Avatar name={p.fullName} />
+              <View style={{ flex: 1, gap: 3 }}>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: color.foreground }}>
+                  {p.fullName}
+                </Text>
+                <Text style={{ fontSize: 12, color: color['muted-foreground'] }}>
+                  {[p.gender, p.dob ? `DOB ${fmtDate(p.dob)}` : null].filter(Boolean).join(' · ')}
+                </Text>
+                <Text style={{ fontSize: 12, color: color['muted-foreground'] }}>
+                  last seen <Text style={mono('400')}>{fmtDate(p.lastVisitedAt)}</Text> · {p.visitCount}{' '}
+                  visit{p.visitCount === 1 ? '' : 's'}
+                </Text>
               </View>
-              <Text style={{ fontSize: 12, color: color['muted-foreground'] }}>
-                last seen {fmtDate(p.lastVisitedAt)} · {p.visitCount} visit
-                {p.visitCount === 1 ? '' : 's'}
-              </Text>
             </Card>
           </Pressable>
         ))

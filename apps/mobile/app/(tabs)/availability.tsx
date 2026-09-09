@@ -8,8 +8,9 @@ import { Card } from '@/components/Card';
 import { Notice } from '@/components/Notice';
 import { RowDatePicker } from '@/components/RowDatePicker';
 import { RowSelect } from '@/components/RowSelect';
-import { RowTimePicker } from '@/components/RowTimePicker';
 import { Screen } from '@/components/Screen';
+import { ScreenTitle } from '@/components/ScreenTitle';
+import { SectionLabel } from '@/components/SectionLabel';
 import { Switch } from '@/components/Switch';
 import { showToast } from '@/components/ToastMessage';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -22,18 +23,31 @@ import {
   useUpsertException,
 } from '@/hooks/useAvailability';
 import { errMessage } from '@/lib/api';
+import { mono } from '@/lib/fonts';
 import { fmtDate, isoDate } from '@/lib/format';
 import { useTheme } from '@/theme/ThemeProvider';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const LENGTHS = [10, 15, 20, 30, 45, 60].map((n) => ({ label: `${n} min`, value: String(n) }));
 
+/** 06:00 → 22:00 in 30-min steps, `HH:mm` value + 12-hour label. */
+const TIME_OPTIONS = Array.from({ length: 33 }, (_, i) => {
+  const mins = 6 * 60 + i * 30;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  const hh = `${h}`.padStart(2, '0');
+  const mm = `${m}`.padStart(2, '0');
+  const h12 = ((h + 11) % 12) + 1;
+  return { value: `${hh}:${mm}`, label: `${h12}:${mm} ${h < 12 ? 'AM' : 'PM'}` };
+});
+
 interface DayRow {
   enabled: boolean;
   start: string;
   end: string;
+  slotMinutes: number;
 }
-const emptyDay = (): DayRow => ({ enabled: false, start: '09:00', end: '17:00' });
+const emptyDay = (): DayRow => ({ enabled: false, start: '09:00', end: '17:00', slotMinutes: 30 });
 
 export default function Availability() {
   const { color } = useTheme();
@@ -46,7 +60,6 @@ export default function Availability() {
   const deleteException = useDeleteException();
   const closeRange = useCloseRange();
 
-  const [length, setLength] = useState('30');
   const [days, setDays] = useState<DayRow[]>(() => DAYS.map(emptyDay));
   const [hydrated, setHydrated] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,10 +72,14 @@ export default function Availability() {
   if (rulesQ.data && !hydrated) {
     const rows = DAYS.map(emptyDay);
     for (const r of rulesQ.data) {
-      rows[r.weekday] = { enabled: true, start: r.startTime, end: r.endTime };
+      rows[r.weekday] = {
+        enabled: true,
+        start: r.startTime,
+        end: r.endTime,
+        slotMinutes: r.slotMinutes,
+      };
     }
     setDays(rows);
-    setLength(String(rulesQ.data[0]?.slotMinutes ?? 30));
     setHydrated(true);
   }
 
@@ -88,7 +105,7 @@ export default function Availability() {
               weekday,
               startTime: d.start,
               endTime: d.end,
-              slotMinutes: Number(length),
+              slotMinutes: d.slotMinutes,
               effectiveFrom: from,
             }
           : null,
@@ -142,67 +159,67 @@ export default function Availability() {
 
   return (
     <Screen contentStyle={{ gap: 14 }}>
-      <Text style={{ fontSize: 20, fontWeight: '700', color: color.foreground }}>Availability</Text>
+      <ScreenTitle>Availability</ScreenTitle>
 
       {error ? <Notice tone="danger">{error}</Notice> : null}
 
-      <Card>
-        <RowSelect
-          label="Slot length"
-          options={LENGTHS}
-          value={length}
-          onChange={setLength}
-          showDivider={false}
-        />
-      </Card>
+      <SectionLabel first>Weekly hours</SectionLabel>
+      <Text style={{ fontSize: 13, color: color['muted-foreground'], marginTop: -4 }}>
+        Set the open hours and appointment slot length for each day.
+      </Text>
+      {days.map((d, i) => {
+        const badRange = d.enabled && d.end <= d.start;
+        return (
+          <Card key={DAYS[i]} style={{ gap: d.enabled ? 12 : 0 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Switch value={d.enabled} onChange={(v) => setDay(i, { enabled: v })} />
+              <Text style={{ flex: 1, fontSize: 15, fontWeight: '700', color: color.foreground }}>
+                {DAYS[i]}
+              </Text>
+              {d.enabled ? (
+                <Text style={[mono('500'), { fontSize: 12, color: color['muted-foreground'] }]}>
+                  {d.start}–{d.end} · {d.slotMinutes}m
+                </Text>
+              ) : (
+                <Text style={{ fontSize: 13, color: color['muted-foreground'] }}>Closed</Text>
+              )}
+            </View>
 
-      <Card style={{ gap: 4 }}>
-        {days.map((d, i) => (
-          <View
-            key={DAYS[i]}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 10,
-              paddingVertical: 8,
-              borderBottomWidth: i < 6 ? 1 : 0,
-              borderBottomColor: color.border,
-            }}
-          >
-            <Switch value={d.enabled} onChange={(v) => setDay(i, { enabled: v })} />
-            <Text style={{ width: 84, fontSize: 13, fontWeight: '600', color: color.foreground }}>
-              {DAYS[i].slice(0, 3)}
-            </Text>
             {d.enabled ? (
-              <View style={{ flex: 1, flexDirection: 'row', gap: 8 }}>
-                <View style={{ flex: 1 }}>
-                  <RowTimePicker
-                    value={d.start}
-                    onChange={(v) => setDay(i, { start: v })}
-                    showDivider={false}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <RowTimePicker
-                    value={d.end}
-                    onChange={(v) => setDay(i, { end: v })}
-                    showDivider={false}
-                  />
-                </View>
+              <View>
+                <RowSelect
+                  label="Start"
+                  sheetTitle={`${DAYS[i]} · start time`}
+                  options={TIME_OPTIONS}
+                  value={d.start}
+                  onChange={(v) => setDay(i, { start: v })}
+                />
+                <RowSelect
+                  label="End"
+                  sheetTitle={`${DAYS[i]} · end time`}
+                  options={TIME_OPTIONS}
+                  value={d.end}
+                  onChange={(v) => setDay(i, { end: v })}
+                  error={badRange ? 'End must be after start' : null}
+                />
+                <RowSelect
+                  label="Slot length"
+                  sheetTitle={`${DAYS[i]} · slot length`}
+                  options={LENGTHS}
+                  value={String(d.slotMinutes)}
+                  onChange={(v) => setDay(i, { slotMinutes: Number(v) })}
+                  showDivider={false}
+                />
               </View>
-            ) : (
-              <Text style={{ flex: 1, fontSize: 12, color: color['muted-foreground'] }}>Closed</Text>
-            )}
-          </View>
-        ))}
-      </Card>
+            ) : null}
+          </Card>
+        );
+      })}
 
       <Button label="Save weekly hours" busy={replace.isPending} onPress={saveRules} />
 
       {/* date overrides */}
-      <Text style={{ fontSize: 15, fontWeight: '700', color: color.foreground, marginTop: 8 }}>
-        Date overrides
-      </Text>
+      <SectionLabel>Date overrides</SectionLabel>
       {(exceptionsQ.data ?? []).length === 0 ? (
         <Text style={{ fontSize: 13, color: color['muted-foreground'] }}>No overrides.</Text>
       ) : (
@@ -211,7 +228,7 @@ export default function Availability() {
             key={ex.id}
             style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
           >
-            <Text style={{ fontSize: 13, color: color.foreground }}>
+            <Text style={[mono('400'), { fontSize: 13, color: color.foreground }]}>
               {fmtDate(ex.date)} · {ex.isClosed ? 'Closed' : `${ex.startTime}–${ex.endTime}`}
             </Text>
             <Ionicons
@@ -239,9 +256,7 @@ export default function Availability() {
         onPress={addClosedDay}
       />
 
-      <Text style={{ fontSize: 15, fontWeight: '700', color: color.foreground, marginTop: 8 }}>
-        Holiday / leave block
-      </Text>
+      <SectionLabel>Holiday / leave block</SectionLabel>
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <View style={{ flex: 1 }}>
           <RowDatePicker label="From" value={rangeFrom} onChange={setRangeFrom} minimumDate={new Date()} />

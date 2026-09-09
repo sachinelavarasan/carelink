@@ -1,6 +1,8 @@
 import type { ComponentProps } from 'react';
+import type { ColorValue } from 'react-native';
 import { Text, View } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import Feather from '@expo/vector-icons/Feather';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Redirect, Tabs } from 'expo-router';
 
 import BottomTabBar from '@/components/BottomTabBar';
@@ -8,7 +10,25 @@ import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/theme/ThemeProvider';
 import { ThemeToggle } from '@/theme/ThemeToggle';
 
-type IoniconName = ComponentProps<typeof Ionicons>['name'];
+type FeatherName = ComponentProps<typeof Feather>['name'];
+type MaterialCommunityName = ComponentProps<typeof MaterialCommunityIcons>['name'];
+
+/** Icon renderer for `Tabs.Screen`'s `tabBarIcon` — `color`/`size` come from BottomTabBar. */
+type TabIcon = (props: { focused: boolean; color: ColorValue; size: number }) => React.ReactNode;
+
+/**
+ * The bar uses a single stroke-icon set (Feather, 2px) in both states — active
+ * tabs only change colour and sit on the brand pill, they don't switch to a
+ * filled glyph. "Doctors" is the one exception: Feather has no medical bag, so
+ * it borrows the matching outline from Material Community.
+ */
+const feather =
+  (name: FeatherName): TabIcon =>
+  ({ color, size }) => <Feather name={name} size={size} color={color} />;
+
+const mci =
+  (name: MaterialCommunityName): TabIcon =>
+  ({ color, size }) => <MaterialCommunityIcons name={name} size={size} color={color} />;
 
 export default function TabsLayout() {
   const { status, me } = useAuth();
@@ -18,16 +38,6 @@ export default function TabsLayout() {
   if (status !== 'authenticated') return <Redirect href="/(auth)/login" />;
 
   const isDoctor = me?.user.role === 'DOCTOR';
-
-  const tabIcon =
-    (base: IoniconName) =>
-    ({ focused }: { focused: boolean }) => (
-      <Ionicons
-        name={focused ? base : (`${base}-outline` as IoniconName)}
-        size={24}
-        color={focused ? color['primary-foreground'] : color['muted-foreground']}
-      />
-    );
 
   return (
     <View style={{ flex: 1 }}>
@@ -39,10 +49,12 @@ export default function TabsLayout() {
           borderBottomWidth: 1,
           borderBottomColor: color.border,
           paddingHorizontal: 16,
-          paddingVertical: 12,
+          paddingVertical: 9,
         }}
       >
-        <Text style={{ fontSize: 16, fontWeight: '600', color: color.foreground }}>CareLink</Text>
+        <Text style={{ fontSize: 17, fontWeight: '700', letterSpacing: -0.3, color: color.foreground }}>
+          Care<Text style={{ color: color.primary }}>Link</Text>
+        </Text>
         <ThemeToggle />
       </View>
 
@@ -50,10 +62,10 @@ export default function TabsLayout() {
         screenOptions={{ headerShown: false, tabBarShowLabel: false }}
         tabBar={(props) => <BottomTabBar {...props} />}
       >
-        <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: tabIcon('home') }} />
+        <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: feather('home') }} />
         <Tabs.Screen
           name="appointments"
-          options={{ title: 'Appointments', tabBarIcon: tabIcon('calendar') }}
+          options={{ title: 'Appts', tabBarIcon: feather('calendar') }}
         />
         {/* Patient-only */}
         <Tabs.Screen
@@ -61,7 +73,7 @@ export default function TabsLayout() {
           options={{
             title: 'Doctors',
             href: isDoctor ? null : '/(tabs)/doctors',
-            tabBarIcon: tabIcon('medkit'),
+            tabBarIcon: mci('briefcase-plus-outline'),
           }}
         />
         <Tabs.Screen
@@ -69,7 +81,7 @@ export default function TabsLayout() {
           options={{
             title: 'Vitals',
             href: isDoctor ? null : '/(tabs)/vitals',
-            tabBarIcon: tabIcon('pulse'),
+            tabBarIcon: feather('activity'),
           }}
         />
         {/* Doctor-only */}
@@ -78,7 +90,7 @@ export default function TabsLayout() {
           options={{
             title: 'Patients',
             href: isDoctor ? '/(tabs)/patients' : null,
-            tabBarIcon: tabIcon('people'),
+            tabBarIcon: feather('users'),
           }}
         />
         <Tabs.Screen
@@ -86,10 +98,10 @@ export default function TabsLayout() {
           options={{
             title: 'Availability',
             href: isDoctor ? '/(tabs)/availability' : null,
-            tabBarIcon: tabIcon('time'),
+            tabBarIcon: feather('clock'),
           }}
         />
-        <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: tabIcon('person') }} />
+        <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: feather('user') }} />
       </Tabs>
     </View>
   );

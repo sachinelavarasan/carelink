@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { HistoryEntryCard } from '@/components/HistoryEntryCard';
 import { Notice } from '@/components/Notice';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { useMedicalHistory } from '@/hooks/useMedicalHistory';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -15,7 +16,8 @@ export default function MedicalHistoryScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ headerShown: true, title: 'Medical history', headerBackTitle: 'Back' }} />
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader title="Medical history" />
       <Screen
         contentStyle={{ gap: 12 }}
         onRefresh={() => void query.refetch()}

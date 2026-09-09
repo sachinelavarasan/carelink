@@ -3,15 +3,19 @@ import { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
+import { Avatar } from '@/components/Avatar';
 import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
 import { Notice } from '@/components/Notice';
 import { Screen } from '@/components/Screen';
+import { ScreenTitle } from '@/components/ScreenTitle';
+import { SectionLabel } from '@/components/SectionLabel';
 import { SearchBar } from '@/components/SearchBar';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { RowSelect } from '@/components/RowSelect';
 import { useDoctors, useMyDoctors, useSpecializations } from '@/hooks/useDoctors';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { mono } from '@/lib/fonts';
 import { fmtDate } from '@/lib/format';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -50,19 +54,18 @@ export default function Doctors() {
 
   return (
     <Screen contentStyle={{ gap: 12 }} onRefresh={() => void doctors.refetch()} refreshing={doctors.isRefetching}>
-      <Text style={{ fontSize: 20, fontWeight: '700', color: color.foreground }}>Find a doctor</Text>
+      <ScreenTitle>Find a doctor</ScreenTitle>
 
       {seen.length > 0 ? (
         <View style={{ gap: 8 }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: color.foreground }}>
-            Doctors you&apos;ve seen
-          </Text>
+          <SectionLabel first>Doctors you&apos;ve seen</SectionLabel>
           {seen.map((d) => (
             <Card
               key={d.id}
-              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
             >
-              <View style={{ flex: 1, paddingRight: 8 }}>
+              <Avatar name={d.fullName} size="sm" />
+              <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 14, fontWeight: '600', color: color.foreground }}>
                   {d.fullName}
                 </Text>
@@ -79,13 +82,16 @@ export default function Doctors() {
       ) : null}
 
       <SearchBar value={q} onChange={setQ} placeholder="Name, specialization, keyword" />
-      <RowSelect
-        sheetTitle="Specialization"
-        placeholder="Any specialization"
-        options={specOptions}
-        value={specialization}
-        onChange={setSpecialization}
-      />
+      <Card style={{ paddingVertical: 0 }}>
+        <RowSelect
+          sheetTitle="Specialization"
+          placeholder="Any specialization"
+          options={specOptions}
+          value={specialization}
+          onChange={setSpecialization}
+          showDivider={false}
+        />
+      </Card>
       <SegmentedControl options={SORTS} value={sort} onChange={setSort} label="Sort by" />
 
       {doctors.isLoading ? (
@@ -99,28 +105,34 @@ export default function Doctors() {
           subtitle="Try a different name or clear the filters."
         />
       ) : (
-        doctors.data!.map((d) => (
-          <Pressable key={d.id} onPress={() => router.push(`/doctor/${d.id}`)}>
-            <Card style={{ gap: 4 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
-                <Text style={{ fontSize: 15, fontWeight: '600', color: color.foreground, flex: 1 }}>
-                  {d.fullName}
-                </Text>
-                <Text style={{ fontSize: 13, color: color['muted-foreground'] }}>
-                  ₹{d.consultationFeeInr}
-                </Text>
-              </View>
-              <Text style={{ fontSize: 13, color: color['muted-foreground'] }}>
-                {d.specializations.join(', ')} · {d.qualifications} · {d.yearsExperience} yrs
-              </Text>
-              {d.bio ? (
-                <Text numberOfLines={2} style={{ fontSize: 13, color: color.foreground }}>
-                  {d.bio}
-                </Text>
-              ) : null}
-            </Card>
-          </Pressable>
-        ))
+        <>
+          <SectionLabel>All doctors</SectionLabel>
+          {doctors.data!.map((d) => (
+            <Pressable key={d.id} onPress={() => router.push(`/doctor/${d.id}`)}>
+              <Card style={{ flexDirection: 'row', gap: 12 }}>
+                <Avatar name={d.fullName} />
+                <View style={{ flex: 1, gap: 3 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+                    <Text style={{ fontSize: 15, fontWeight: '600', color: color.foreground, flex: 1 }}>
+                      {d.fullName}
+                    </Text>
+                    <Text style={[mono('500'), { fontSize: 13, color: color.foreground }]}>
+                      ₹{d.consultationFeeInr}
+                    </Text>
+                  </View>
+                  <Text style={{ fontSize: 13, color: color['muted-foreground'] }}>
+                    {d.specializations.join(', ')} · {d.qualifications} · {d.yearsExperience} yrs
+                  </Text>
+                  {d.bio ? (
+                    <Text numberOfLines={2} style={{ fontSize: 13, color: color.foreground }}>
+                      {d.bio}
+                    </Text>
+                  ) : null}
+                </View>
+              </Card>
+            </Pressable>
+          ))}
+        </>
       )}
     </Screen>
   );
