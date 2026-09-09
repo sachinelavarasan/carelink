@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Image, KeyboardAvoidingView, Platform, Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 
 import { Screen } from '@/components/Screen';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -39,7 +39,7 @@ export function AuthShell({
           </Text>
         </View>
         {children}
-      </KeyboardAvoidingView>
+      </View>
     </Screen>
   );
 }
