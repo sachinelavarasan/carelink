@@ -23,10 +23,7 @@ export function AuthShell({
       <View style={{ position: 'absolute', right: 24, top: 12 }}>
         <ThemeToggle />
       </View>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ gap: 14 }}
-      >
+      <View style={{ gap: 14 }}>
         <View style={{ alignItems: 'center', gap: 8, marginBottom: 4 }}>
           <Image
             source={logo}
