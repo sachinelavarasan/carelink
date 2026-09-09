@@ -2,6 +2,7 @@ import { Keyboard, Pressable, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { useTheme } from '@/theme/ThemeProvider';
+import { radius } from '@/theme/tokens';
 
 interface SearchBarProps {
   value: string;
@@ -29,7 +30,7 @@ export function SearchBar({
         alignItems: 'center',
         gap: 8,
         borderWidth: 1,
-        borderRadius: 8,
+        borderRadius: radius.sm,
         borderColor: color.border,
         backgroundColor: color.background,
         paddingHorizontal: 10,

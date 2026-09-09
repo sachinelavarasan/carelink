@@ -3,31 +3,43 @@ import { type BadgeVariant, appointmentStatusMeta } from '@carelink/theme';
 import { Text, View } from 'react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
+import { radius } from '@/theme/tokens';
 
 export function StatusBadge({ status }: { status: AppointmentStatus }) {
   const { color } = useTheme();
   const meta = appointmentStatusMeta[status];
 
-  const palette: Record<BadgeVariant, { bg: string; border: string; fg: string }> = {
-    success: { bg: color['success-bg'], border: color['success-border'], fg: color['success-fg'] },
-    warning: { bg: color['warning-bg'], border: color['warning-border'], fg: color['warning-fg'] },
-    danger: { bg: color['danger-bg'], border: color['danger-border'], fg: color['danger-fg'] },
-    neutral: { bg: color.muted, border: color.border, fg: color['muted-foreground'] },
+  // Colour is never the only signal — the label text ("Cancelled" vs "No-show")
+  // carries the distinction on its own.
+  const palette: Record<BadgeVariant, { bg: string; fg: string }> = {
+    success: { bg: color['success-bg'], fg: color['success-fg'] },
+    warning: { bg: color['warning-bg'], fg: color['warning-fg'] },
+    danger: { bg: color['danger-bg'], fg: color['danger-fg'] },
+    neutral: { bg: color.muted, fg: color['muted-foreground'] },
   };
   const p = palette[meta.variant];
 
   return (
     <View
       style={{
-        borderRadius: 999,
-        borderWidth: 1,
-        borderColor: p.border,
+        alignSelf: 'flex-start',
+        borderRadius: radius.pill,
         backgroundColor: p.bg,
-        paddingHorizontal: 8,
-        paddingVertical: 2,
+        paddingHorizontal: 9,
+        paddingVertical: 3,
       }}
     >
-      <Text style={{ fontSize: 12, fontWeight: '500', color: p.fg }}>{meta.label}</Text>
+      <Text
+        style={{
+          fontSize: 10.5,
+          fontWeight: '700',
+          letterSpacing: 0.5,
+          textTransform: 'uppercase',
+          color: p.fg,
+        }}
+      >
+        {meta.label}
+      </Text>
     </View>
   );
 }

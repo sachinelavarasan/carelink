@@ -3,6 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { useTheme } from '@/theme/ThemeProvider';
+import { radius, space, type as t } from '@/theme/tokens';
 
 interface RowFieldProps {
   label?: string;
@@ -57,7 +58,7 @@ export function RowField({
             style={{
               width: 34,
               height: 34,
-              borderRadius: 10,
+              borderRadius: radius.sm,
               alignItems: 'center',
               justifyContent: 'center',
               backgroundColor: color.muted,
@@ -68,7 +69,7 @@ export function RowField({
         ) : null}
         <View style={{ flex: 1 }}>
           {label ? (
-            <Text style={{ fontSize: 12, fontWeight: '500', color: color['muted-foreground'], marginBottom: 2 }}>
+            <Text style={[t.label, { color: color['muted-foreground'], marginBottom: space.xs - 1 }]}>
               {label}
             </Text>
           ) : null}

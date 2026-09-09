@@ -1,35 +1,42 @@
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { Text, View } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { useTheme } from '@/theme/ThemeProvider';
+import { radius, space } from '@/theme/tokens';
 
 type Tone = 'info' | 'warning' | 'danger' | 'success';
+type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
-/** Inline coloured callout. `info` reuses the muted surface; the rest use the
- *  matching status tokens. */
+/** Inline coloured callout. `info` reuses the muted surface (kept bordered so it
+ *  reads against a card); the rest use the matching status tokens, borderless. */
 export function Notice({ tone = 'info', children }: { tone?: Tone; children: ReactNode }) {
   const { color } = useTheme();
 
-  const palette: Record<Tone, { bg: string; border: string; fg: string }> = {
-    info: { bg: color.muted, border: color.border, fg: color.foreground },
-    success: { bg: color['success-bg'], border: color['success-border'], fg: color['success-fg'] },
-    warning: { bg: color['warning-bg'], border: color['warning-border'], fg: color['warning-fg'] },
-    danger: { bg: color['danger-bg'], border: color['danger-border'], fg: color['danger-fg'] },
+  const palette: Record<Tone, { bg: string; fg: string; icon: IoniconName }> = {
+    info: { bg: color.muted, fg: color.foreground, icon: 'information-circle' },
+    success: { bg: color['success-bg'], fg: color['success-fg'], icon: 'checkmark-circle' },
+    warning: { bg: color['warning-bg'], fg: color['warning-fg'], icon: 'warning' },
+    danger: { bg: color['danger-bg'], fg: color['danger-fg'], icon: 'alert-circle' },
   };
   const p = palette[tone];
 
   return (
     <View
       style={{
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: p.border,
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: space.sm,
+        borderRadius: radius.md,
+        borderWidth: tone === 'info' ? 1 : 0,
+        borderColor: color.border,
         backgroundColor: p.bg,
-        paddingHorizontal: 12,
+        paddingHorizontal: space.md,
         paddingVertical: 10,
       }}
     >
-      <Text style={{ fontSize: 13, color: p.fg }}>{children}</Text>
+      <Ionicons name={p.icon} size={15} color={p.fg} style={{ marginTop: 1 }} />
+      <Text style={{ flex: 1, fontSize: 13, lineHeight: 18, color: p.fg }}>{children}</Text>
     </View>
   );
 }

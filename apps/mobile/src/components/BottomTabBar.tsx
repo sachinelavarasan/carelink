@@ -5,6 +5,7 @@ import { BlurView } from 'expo-blur';
 import type { Tabs } from 'expo-router';
 
 import { useTheme } from '@/theme/ThemeProvider';
+import { radius, space } from '@/theme/tokens';
 
 type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>>[0];
 
@@ -82,24 +83,25 @@ export default function BottomTabBar({ state, descriptors, navigation }: TabBarP
           >
             <Animated.View
               style={{
-                paddingHorizontal: 20,
-                paddingVertical: 2,
+                paddingHorizontal: space.lg,
+                paddingVertical: 4,
                 alignItems: 'center',
-                backgroundColor: isFocused ? color.primary : 'transparent',
-                borderRadius: isFocused ? 15 : 0,
+                backgroundColor: isFocused ? color['primary-soft'] : 'transparent',
+                borderRadius: radius.pill,
               }}
             >
               {options.tabBarIcon?.({
                 focused: isFocused,
-                color: isFocused ? color['primary-foreground'] : color['muted-foreground'],
+                color: isFocused ? color.primary : color['muted-foreground'],
                 size: 24,
               })}
             </Animated.View>
             <Text
               style={{
-                color: isFocused ? color.foreground : color['muted-foreground'],
-                fontWeight: '500',
-                fontSize: 12,
+                color: isFocused ? color.primary : color['muted-foreground'],
+                fontWeight: isFocused ? '600' : '500',
+                fontSize: 11,
+                marginTop: 1,
               }}
             >
               {label}
