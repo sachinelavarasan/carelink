@@ -1,8 +1,9 @@
 import { ActivityIndicator, Pressable, Text, type StyleProp, type ViewStyle } from 'react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
+import { radius, space } from '@/theme/tokens';
 
-type Variant = 'primary' | 'outline' | 'ghost' | 'destructive';
+type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
 type Size = 'md' | 'sm';
 
 interface ButtonProps {
@@ -29,40 +30,54 @@ export function Button({
 
   const bg: Record<Variant, string> = {
     primary: color.primary,
-    destructive: color.destructive,
+    secondary: color.muted,
+    destructive: 'transparent',
     outline: 'transparent',
     ghost: 'transparent',
   };
   const fg: Record<Variant, string> = {
     primary: color['primary-foreground'],
-    destructive: '#ffffff',
+    secondary: color.foreground,
+    destructive: color.destructive,
     outline: color.foreground,
     ghost: color.primary,
+  };
+  const borderColor: Partial<Record<Variant, string>> = {
+    secondary: color.border,
+    outline: color.border,
+    destructive: color.destructive,
   };
 
   return (
     <Pressable
       onPress={onPress}
       disabled={isDisabled}
-      style={[
+      style={({ pressed }) => [
         {
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 8,
-          borderRadius: 8,
-          paddingVertical: size === 'sm' ? 8 : 13,
-          paddingHorizontal: size === 'sm' ? 12 : 16,
+          gap: space.sm,
+          borderRadius: radius.md,
+          paddingVertical: size === 'sm' ? space.sm : 13,
+          paddingHorizontal: size === 'sm' ? space.md : space.lg,
           backgroundColor: bg[variant],
-          borderWidth: variant === 'outline' ? 1 : 0,
-          borderColor: color.border,
-          opacity: isDisabled ? 0.5 : 1,
+          borderWidth: borderColor[variant] ? 1 : 0,
+          borderColor: borderColor[variant],
+          opacity: isDisabled ? 0.5 : pressed ? 0.85 : 1,
         },
         style,
       ]}
     >
       {busy && <ActivityIndicator color={fg[variant]} size="small" />}
-      <Text style={{ color: fg[variant], fontWeight: '600', fontSize: size === 'sm' ? 13 : 15 }}>
+      <Text
+        style={{
+          color: fg[variant],
+          fontWeight: '600',
+          fontSize: size === 'sm' ? 13 : 15,
+          letterSpacing: -0.1,
+        }}
+      >
         {label}
       </Text>
     </Pressable>

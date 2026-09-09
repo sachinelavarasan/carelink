@@ -6,6 +6,7 @@ import { Card } from '@/components/Card';
 import { IntakePanel } from '@/components/IntakePanel';
 import { Notice } from '@/components/Notice';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { showToast } from '@/components/ToastMessage';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -17,6 +18,7 @@ import {
 import { useAppointmentPrescription } from '@/hooks/usePrescriptions';
 import { errMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { mono } from '@/lib/fonts';
 import { fmtDate, fmtDateTime } from '@/lib/format';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -71,16 +73,17 @@ export default function AppointmentDetail() {
 
   return (
     <>
-      <Stack.Screen options={{ headerShown: true, title: 'Appointment', headerBackTitle: 'Back' }} />
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader title="Appointment" />
       <Screen contentStyle={{ gap: 12 }}>
         {isLoading ? <Text style={line}>Loading…</Text> : null}
         {isError ? <Notice tone="danger">{errMessage(error, 'Not found')}</Notice> : null}
 
         {a ? (
           <>
-            <Card style={{ gap: 6 }}>
+            <Card elevated style={{ gap: 6 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 16, fontWeight: '700', color: color.foreground }}>
+                <Text style={[mono('600'), { fontSize: 15, color: color.foreground }]}>
                   {fmtDateTime(a.scheduledStart)}
                 </Text>
                 <StatusBadge status={a.status} />
@@ -88,16 +91,24 @@ export default function AppointmentDetail() {
               {name ? <Text style={line}>with {name}</Text> : null}
               <Text style={line}>{a.reasonForVisit}</Text>
 
-              <View style={{ marginTop: 6, gap: 4 }}>
+              <View
+                style={{
+                  marginTop: 6,
+                  paddingTop: 10,
+                  borderTopWidth: 1,
+                  borderTopColor: color.border,
+                  gap: 5,
+                }}
+              >
                 <Text style={label}>
                   Consent{'  '}
-                  <Text style={{ fontWeight: '400', color: color.foreground }}>
+                  <Text style={[mono('400'), { color: color.foreground }]}>
                     {a.consentAcceptedAt ? `accepted ${fmtDate(a.consentAcceptedAt)}` : 'not recorded'}
                   </Text>
                 </Text>
                 <Text style={label}>
                   Identity{'  '}
-                  <Text style={{ fontWeight: '400', color: color.foreground }}>
+                  <Text style={[mono('400'), { color: color.foreground }]}>
                     {a.identityVerifiedAt ? `verified ${fmtDate(a.identityVerifiedAt)}` : 'not verified'}
                   </Text>
                 </Text>

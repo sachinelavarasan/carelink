@@ -3,6 +3,7 @@ import { Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { useTheme } from '@/theme/ThemeProvider';
+import { radius, space } from '@/theme/tokens';
 
 export function EmptyState({
   icon = 'file-tray-outline',
@@ -18,17 +19,29 @@ export function EmptyState({
 }) {
   const { color } = useTheme();
   return (
-    <View style={{ alignItems: 'center', justifyContent: 'center', gap: 8, padding: 32 }}>
-      <Ionicons name={icon} size={40} color={color['muted-foreground']} />
+    <View style={{ alignItems: 'center', justifyContent: 'center', gap: space.sm, padding: space.xxl + 8 }}>
+      <View
+        style={{
+          width: 56,
+          height: 56,
+          borderRadius: radius.lg,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: color.muted,
+          marginBottom: space.xs,
+        }}
+      >
+        <Ionicons name={icon} size={28} color={color['muted-foreground']} />
+      </View>
       <Text style={{ fontSize: 15, fontWeight: '600', color: color.foreground, textAlign: 'center' }}>
         {title}
       </Text>
       {subtitle ? (
-        <Text style={{ fontSize: 13, color: color['muted-foreground'], textAlign: 'center' }}>
+        <Text style={{ fontSize: 13, lineHeight: 18, color: color['muted-foreground'], textAlign: 'center' }}>
           {subtitle}
         </Text>
       ) : null}
-      {children ? <View style={{ marginTop: 8, alignSelf: 'stretch' }}>{children}</View> : null}
+      {children ? <View style={{ marginTop: space.sm, alignSelf: 'stretch' }}>{children}</View> : null}
     </View>
   );
 }

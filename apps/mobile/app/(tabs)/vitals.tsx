@@ -11,11 +11,13 @@ import { Field } from '@/components/Field';
 import { ModalCard } from '@/components/ModalCard';
 import { Notice } from '@/components/Notice';
 import { Screen } from '@/components/Screen';
+import { ScreenTitle } from '@/components/ScreenTitle';
 import { showToast } from '@/components/ToastMessage';
 import { VitalsSummary } from '@/components/VitalsSummary';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useAddVital, useDeleteVital, useMyVitals } from '@/hooks/useVitals';
 import { errMessage } from '@/lib/api';
+import { mono } from '@/lib/fonts';
 import { fmtDateTime, isoDate } from '@/lib/format';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -101,7 +103,7 @@ export default function Vitals() {
   return (
     <Screen contentStyle={{ gap: 12 }} onRefresh={() => void refetch()} refreshing={isRefetching}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={{ fontSize: 20, fontWeight: '700', color: color.foreground }}>Vitals</Text>
+        <ScreenTitle>Vitals</ScreenTitle>
         <Button label="Log" size="sm" onPress={() => setOpen(true)} />
       </View>
 
@@ -114,11 +116,13 @@ export default function Vitals() {
       ) : (
         sorted.map((v) => (
           <Card key={v.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: color.foreground }}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[mono('500'), { fontSize: 12.5, color: color.foreground }]}>
                 {fmtDateTime(v.recordedAt)}
               </Text>
-              <Text style={{ fontSize: 13, color: color['muted-foreground'] }}>{metricLine(v)}</Text>
+              <Text style={[mono('400'), { fontSize: 13, color: color['muted-foreground'] }]}>
+                {metricLine(v)}
+              </Text>
               {v.notes ? (
                 <Text style={{ fontSize: 12, color: color['muted-foreground'] }}>{v.notes}</Text>
               ) : null}

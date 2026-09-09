@@ -7,6 +7,7 @@ import { Button } from '@/components/Button';
 import { Field } from '@/components/Field';
 import { Notice } from '@/components/Notice';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { RowSelect } from '@/components/RowSelect';
 import { showToast } from '@/components/ToastMessage';
 import { useAppointment } from '@/hooks/useAppointments';
@@ -74,7 +75,8 @@ export default function Intake() {
 
   return (
     <>
-      <Stack.Screen options={{ headerShown: true, title: 'Pre-visit form', headerBackTitle: 'Back' }} />
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader title="Pre-visit form" />
       <Screen contentStyle={{ gap: 14 }}>
         <Text style={{ fontSize: 13, color: color['muted-foreground'] }}>
           Share this with your doctor before the consultation. You can edit it any time until the

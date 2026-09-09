@@ -7,10 +7,12 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Notice } from '@/components/Notice';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { medicineLabel } from '@/components/MedicineRowsEditor';
 import { showToast } from '@/components/ToastMessage';
 import { usePrescription } from '@/hooks/usePrescriptions';
 import { errMessage } from '@/lib/api';
+import { mono } from '@/lib/fonts';
 import { sharePrescriptionPdf } from '@/lib/pdf';
 import { fmtDate, fmtDateTime } from '@/lib/format';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -43,19 +45,20 @@ export default function PrescriptionDetail() {
 
   return (
     <>
-      <Stack.Screen options={{ headerShown: true, title: 'Prescription', headerBackTitle: 'Back' }} />
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader title="Prescription" />
       <Screen contentStyle={{ gap: 12 }}>
         {isLoading ? <Text style={line}>Loading…</Text> : null}
         {isError ? <Notice tone="danger">{errMessage(error, 'Not found')}</Notice> : null}
 
         {rx ? (
           <>
-            <Card style={{ gap: 4 }}>
+            <Card elevated style={{ gap: 4 }}>
               <Text style={{ fontSize: 17, fontWeight: '700', color: color.foreground }}>
                 {rx.diagnosis}
               </Text>
               <Text style={line}>
-                {rx.patientName} · {fmtDateTime(rx.scheduledStart)}
+                {rx.patientName} · <Text style={mono('400')}>{fmtDateTime(rx.scheduledStart)}</Text>
               </Text>
               <Text style={line}>
                 {rx.status === 'FINALIZED' && rx.finalizedAt
@@ -69,14 +72,20 @@ export default function PrescriptionDetail() {
                       key={f}
                       style={{
                         borderRadius: 999,
-                        borderWidth: 1,
-                        borderColor: color.border,
                         backgroundColor: color.muted,
-                        paddingHorizontal: 8,
-                        paddingVertical: 2,
+                        paddingHorizontal: 9,
+                        paddingVertical: 3,
                       }}
                     >
-                      <Text style={{ fontSize: 11, fontWeight: '600', color: color['muted-foreground'] }}>
+                      <Text
+                        style={{
+                          fontSize: 10.5,
+                          fontWeight: '700',
+                          letterSpacing: 0.5,
+                          textTransform: 'uppercase',
+                          color: color['muted-foreground'],
+                        }}
+                      >
                         {drugCategoryFlagMeta[f].label}
                       </Text>
                     </View>
@@ -99,7 +108,7 @@ export default function PrescriptionDetail() {
                   <Text style={{ fontSize: 14, fontWeight: '600', color: color.foreground }}>
                     {medicineLabel(m)}
                   </Text>
-                  <Text style={line}>
+                  <Text style={[line, mono('400')]}>
                     {m.frequency} · {m.durationDays} day{m.durationDays === 1 ? '' : 's'}
                   </Text>
                   {m.instructions ? <Text style={line}>{m.instructions}</Text> : null}

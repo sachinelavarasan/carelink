@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, Text, TextInput, View, type TextInputProps } from 'react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
+import { radius, space, type as t } from '@/theme/tokens';
 
 interface FieldProps extends Omit<TextInputProps, 'style'> {
   label?: string;
@@ -22,15 +23,24 @@ export function Field({
   password = false,
   flat = false,
   multiline = false,
+  onFocus,
+  onBlur,
   ...input
 }: FieldProps) {
   const { color } = useTheme();
   const [hidden, setHidden] = useState(password);
+  const [focused, setFocused] = useState(false);
+
+  const borderColor = error
+    ? color.destructive
+    : focused
+      ? color.ring
+      : color.input;
 
   return (
-    <View style={{ gap: 6 }}>
+    <View style={{ gap: space.xs + 2 }}>
       {label ? (
-        <Text style={{ fontSize: 13, fontWeight: '500', color: color.foreground }}>{label}</Text>
+        <Text style={[t.label, { color: color['muted-foreground'] }]}>{label}</Text>
       ) : null}
 
       <View style={{ justifyContent: 'center' }}>
@@ -40,14 +50,22 @@ export function Field({
           secureTextEntry={hidden}
           placeholderTextColor={color['muted-foreground']}
           textAlignVertical={multiline ? 'top' : 'center'}
+          onFocus={(e) => {
+            setFocused(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            onBlur?.(e);
+          }}
           style={{
-            borderRadius: flat ? 0 : 8,
+            borderRadius: flat ? 0 : radius.sm,
             borderWidth: flat ? 0 : 1,
-            borderColor: error ? color.destructive : color.input,
+            borderColor,
             backgroundColor: flat ? 'transparent' : color.background,
-            paddingHorizontal: flat ? 0 : 12,
+            paddingHorizontal: flat ? 0 : space.md,
             paddingVertical: 11,
-            paddingRight: password ? 64 : flat ? 0 : 12,
+            paddingRight: password ? 64 : flat ? 0 : space.md,
             minHeight: multiline ? 96 : undefined,
             fontSize: 16,
             color: color.foreground,
@@ -57,9 +75,11 @@ export function Field({
           <Pressable
             onPress={() => setHidden((h) => !h)}
             hitSlop={8}
-            style={{ position: 'absolute', right: 12 }}
+            style={{ position: 'absolute', right: space.md }}
           >
-            <Text style={{ fontSize: 13, color: color.primary }}>{hidden ? 'Show' : 'Hide'}</Text>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: color.primary }}>
+              {hidden ? 'Show' : 'Hide'}
+            </Text>
           </Pressable>
         ) : null}
       </View>
