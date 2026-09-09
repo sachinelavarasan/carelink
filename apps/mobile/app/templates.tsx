@@ -19,6 +19,7 @@ import {
 import { ModalCard } from '@/components/ModalCard';
 import { Notice } from '@/components/Notice';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { showToast } from '@/components/ToastMessage';
 import { useConfirm } from '@/hooks/useConfirm';
 import {
@@ -125,7 +126,8 @@ export default function Templates() {
 
   return (
     <>
-      <Stack.Screen options={{ headerShown: true, title: 'Templates', headerBackTitle: 'Back' }} />
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader title="Templates" />
       <Screen contentStyle={{ gap: 12 }}>
         <Button label="New template" onPress={openNew} />
 

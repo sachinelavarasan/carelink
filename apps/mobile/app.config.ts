@@ -48,7 +48,7 @@ const config: ExpoConfig = {
     adaptiveIcon: {
       foregroundImage: './assets/images/android-icon-foreground.png',
       monochromeImage: './assets/images/android-icon-monochrome.png',
-      backgroundColor: '#f8fafc',
+      backgroundColor: '#f7f5ef',
     },
   },
   plugins: [
@@ -78,10 +78,10 @@ const config: ExpoConfig = {
         image: './assets/images/splash-icon.png',
         imageWidth: 180,
         resizeMode: 'contain',
-        backgroundColor: '#f8fafc',
+        backgroundColor: '#f7f5ef',
         dark: {
           image: './assets/images/splash-icon-dark.png',
-          backgroundColor: '#0b171b',
+          backgroundColor: '#0e1917',
         },
       },
     ],

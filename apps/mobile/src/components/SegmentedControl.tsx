@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
+import { elevation, radius, space, type as t } from '@/theme/tokens';
 
 interface Option<T extends string> {
   value: T;
@@ -24,18 +25,17 @@ export function SegmentedControl<T extends string>({
 }: SegmentedControlProps<T>) {
   const { color } = useTheme();
   return (
-    <View style={{ gap: 6 }}>
+    <View style={{ gap: space.xs + 2 }}>
       {label ? (
-        <Text style={{ fontSize: 13, fontWeight: '500', color: color.foreground }}>{label}</Text>
+        <Text style={[t.label, { color: color['muted-foreground'] }]}>{label}</Text>
       ) : null}
       <View
         style={{
           flexDirection: 'row',
-          borderRadius: 999,
-          borderWidth: 1,
-          borderColor: color.border,
+          borderRadius: radius.sm,
           backgroundColor: color.muted,
           padding: 3,
+          gap: 2,
         }}
       >
         {options.map((opt) => {
@@ -44,22 +44,25 @@ export function SegmentedControl<T extends string>({
             <Pressable
               key={opt.value}
               onPress={() => onChange(opt.value)}
-              style={{
-                flex: 1,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                paddingVertical: 6,
-                borderRadius: 999,
-                backgroundColor: active ? color.primary : 'transparent',
-              }}
+              style={[
+                {
+                  flex: 1,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  paddingVertical: 7,
+                  borderRadius: radius.sm - 2,
+                  backgroundColor: active ? color.card : 'transparent',
+                },
+                active && elevation.card,
+              ]}
             >
               <Text
                 style={{
                   fontSize: 13,
                   fontWeight: '600',
-                  color: active ? color['primary-foreground'] : color['muted-foreground'],
+                  color: active ? color.foreground : color['muted-foreground'],
                 }}
               >
                 {opt.label}
@@ -73,14 +76,14 @@ export function SegmentedControl<T extends string>({
                     paddingHorizontal: 5,
                     alignItems: 'center',
                     justifyContent: 'center',
-                    backgroundColor: active ? color['primary-foreground'] : color.card,
+                    backgroundColor: active ? color.primary : color.background,
                   }}
                 >
                   <Text
                     style={{
                       fontSize: 11,
                       fontWeight: '700',
-                      color: active ? color.primary : color['muted-foreground'],
+                      color: active ? color['primary-foreground'] : color['muted-foreground'],
                     }}
                   >
                     {opt.count}

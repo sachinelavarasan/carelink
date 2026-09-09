@@ -3,6 +3,7 @@ import { drugCategoryFlagMeta } from '@carelink/theme';
 import { Pressable, Text, View } from 'react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
+import { radius } from '@/theme/tokens';
 
 const FLAGS = Object.values(DrugCategoryFlag);
 
@@ -29,19 +30,19 @@ export function FlagChips({
               onChange(next);
             }}
             style={{
-              borderRadius: 999,
+              borderRadius: radius.pill,
               borderWidth: 1,
               paddingHorizontal: 12,
               paddingVertical: 6,
-              borderColor: on ? color.primary : color.border,
-              backgroundColor: on ? color.primary : 'transparent',
+              borderColor: on ? 'transparent' : color.border,
+              backgroundColor: on ? color['primary-soft'] : 'transparent',
             }}
           >
             <Text
               style={{
                 fontSize: 12,
                 fontWeight: '600',
-                color: on ? color['primary-foreground'] : color['muted-foreground'],
+                color: on ? color.primary : color['muted-foreground'],
               }}
             >
               {drugCategoryFlagMeta[f].label}

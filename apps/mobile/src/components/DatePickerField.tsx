@@ -8,6 +8,7 @@ import { format, isValid, parse, parseISO } from 'date-fns';
 
 import { Button } from '@/components/Button';
 import { useTheme } from '@/theme/ThemeProvider';
+import { radius, type as t } from '@/theme/tokens';
 
 type Mode = 'date' | 'time';
 
@@ -67,9 +68,9 @@ export function DatePickerField({
   };
 
   return (
-    <View style={{ gap: 6 }}>
+    <View style={{ gap: 5 }}>
       {label ? (
-        <Text style={{ fontSize: 13, fontWeight: '500', color: color.foreground }}>{label}</Text>
+        <Text style={[t.label, { color: color['muted-foreground'] }]}>{label}</Text>
       ) : null}
 
       <Pressable
@@ -78,7 +79,7 @@ export function DatePickerField({
           flexDirection: 'row',
           alignItems: 'center',
           gap: 8,
-          borderRadius: 8,
+          borderRadius: radius.sm,
           borderWidth: 1,
           borderColor: error ? color.destructive : color.input,
           backgroundColor: color.background,
@@ -89,9 +90,9 @@ export function DatePickerField({
         <Ionicons
           name={mode === 'time' ? 'time-outline' : 'calendar-outline'}
           size={16}
-          color={color['muted-foreground']}
+          color={color.primary}
         />
-        <Text style={{ fontSize: 16, color: value ? color.foreground : color['muted-foreground'] }}>
+        <Text style={{ fontSize: 15, fontWeight: '600', color: value ? color.foreground : color['muted-foreground'] }}>
           {value ? format(toDate(value, mode), DISPLAY[mode]) : placeholder}
         </Text>
       </Pressable>

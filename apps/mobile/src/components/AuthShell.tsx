@@ -27,16 +27,29 @@ export function AuthShell({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ gap: 14 }}
       >
-        <View style={{ alignItems: 'center', gap: 8, marginBottom: 4 }}>
+        <View style={{ alignItems: 'center', gap: 6, marginBottom: 6 }}>
           <Image
             source={logo}
             resizeMode="contain"
-            style={{ width: 168, height: 90 }}
+            style={{ width: 150, height: 80 }}
             accessibilityLabel="CareLink"
           />
-          <Text style={{ textAlign: 'center', fontSize: 14, color: color['muted-foreground'] }}>
-            {subtitle ?? title}
+          <Text
+            style={{
+              textAlign: 'center',
+              fontSize: 19,
+              fontWeight: '700',
+              letterSpacing: -0.3,
+              color: color.foreground,
+            }}
+          >
+            {title}
           </Text>
+          {subtitle ? (
+            <Text style={{ textAlign: 'center', fontSize: 14, color: color['muted-foreground'] }}>
+              {subtitle}
+            </Text>
+          ) : null}
         </View>
         {children}
       </KeyboardAvoidingView>

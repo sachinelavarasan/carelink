@@ -1,7 +1,9 @@
 import type { Vital } from '@carelink/shared';
 import { Text, View } from 'react-native';
 
+import { mono } from '@/lib/fonts';
 import { useTheme } from '@/theme/ThemeProvider';
+import { radius, space, type as t } from '@/theme/tokens';
 
 /** Latest recorded value for each metric, shown as small tiles. */
 export function VitalsSummary({ items }: { items: Vital[] }) {
@@ -28,22 +30,23 @@ export function VitalsSummary({ items }: { items: Vital[] }) {
   if (tiles.length === 0) return null;
 
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
       {tiles.map(([label, value]) => (
         <View
           key={label}
           style={{
             flexGrow: 1,
             flexBasis: '30%',
-            borderRadius: 10,
+            borderRadius: radius.md,
             borderWidth: 1,
             borderColor: color.border,
             backgroundColor: color.card,
             padding: 10,
+            gap: 2,
           }}
         >
-          <Text style={{ fontSize: 11, color: color['muted-foreground'] }}>{label}</Text>
-          <Text style={{ fontSize: 16, fontWeight: '700', color: color.foreground }}>{value}</Text>
+          <Text style={[t.label, { fontSize: 10, color: color['muted-foreground'] }]}>{label}</Text>
+          <Text style={[mono('600'), { fontSize: 16, color: color.foreground }]}>{value}</Text>
         </View>
       ))}
     </View>

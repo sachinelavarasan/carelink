@@ -1,5 +1,10 @@
 import { cloneElement } from 'react';
-import { StyleSheet, Text, TextInput } from 'react-native';
+import { StyleSheet, Text, TextInput, type TextStyle } from 'react-native';
+import {
+  IBMPlexMono_400Regular,
+  IBMPlexMono_500Medium,
+  IBMPlexMono_600SemiBold,
+} from '@expo-google-fonts/ibm-plex-mono';
 
 /**
  * The app styles with `fontWeight` (no NativeWind / global font). RN has no
@@ -33,6 +38,32 @@ export const INTER_FONTS = {
   'Inter-ExtraBold': require('../../assets/fonts/Inter-ExtraBold.ttf'),
   'Inter-Black': require('../../assets/fonts/Inter-Black.ttf'),
 } as const;
+
+/**
+ * IBM Plex Mono — for clinical data only (vitals, doses, fees, dates). Opt-in
+ * per string via `mono()`; the weight-patch above never touches these because
+ * an explicit `fontFamily` always wins.
+ */
+export const MONO_FONTS = {
+  'IBMPlexMono-Regular': IBMPlexMono_400Regular,
+  'IBMPlexMono-Medium': IBMPlexMono_500Medium,
+  'IBMPlexMono-SemiBold': IBMPlexMono_600SemiBold,
+} as const;
+
+const MONO_BY_WEIGHT: Record<'400' | '500' | '600', string> = {
+  '400': 'IBMPlexMono-Regular',
+  '500': 'IBMPlexMono-Medium',
+  '600': 'IBMPlexMono-SemiBold',
+};
+
+/** Style for a run of numbers: Plex Mono + tabular figures + tightened tracking. */
+export function mono(weight: '400' | '500' | '600' = '400'): TextStyle {
+  return {
+    fontFamily: MONO_BY_WEIGHT[weight],
+    fontVariant: ['tabular-nums'],
+    letterSpacing: -0.2,
+  };
+}
 
 let patched = false;
 
