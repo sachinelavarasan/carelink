@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Image, KeyboardAvoidingView, Platform, Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 
 import { Screen } from '@/components/Screen';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -23,36 +23,20 @@ export function AuthShell({
       <View style={{ position: 'absolute', right: 24, top: 12 }}>
         <ThemeToggle />
       </View>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ gap: 14 }}
-      >
-        <View style={{ alignItems: 'center', gap: 6, marginBottom: 6 }}>
+      <View style={{ gap: 14 }}>
+        <View style={{ alignItems: 'center', gap: 8, marginBottom: 4 }}>
           <Image
             source={logo}
             resizeMode="contain"
-            style={{ width: 150, height: 80 }}
+            style={{ width: 168, height: 90 }}
             accessibilityLabel="CareLink"
           />
-          <Text
-            style={{
-              textAlign: 'center',
-              fontSize: 19,
-              fontWeight: '700',
-              letterSpacing: -0.3,
-              color: color.foreground,
-            }}
-          >
-            {title}
+          <Text style={{ textAlign: 'center', fontSize: 14, color: color['muted-foreground'] }}>
+            {subtitle ?? title}
           </Text>
-          {subtitle ? (
-            <Text style={{ textAlign: 'center', fontSize: 14, color: color['muted-foreground'] }}>
-              {subtitle}
-            </Text>
-          ) : null}
         </View>
         {children}
-      </KeyboardAvoidingView>
+      </View>
     </Screen>
   );
 }

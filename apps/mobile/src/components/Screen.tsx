@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import {
+  KeyboardAvoidingView,
+  Platform,
   RefreshControl,
   ScrollView,
   View,
@@ -41,13 +43,23 @@ export function Screen({
     contentStyle,
   ];
 
+  // Lift content clear of the keyboard, matching the Expensify screens.
+  const kav = (body: ReactNode) => (
+    <KeyboardAvoidingView
+      {...(Platform.OS === 'ios' ? { behavior: 'padding' as const } : { behavior: 'height' as const })}
+      style={{ flex: 1, backgroundColor: color.background }}
+    >
+      {body}
+    </KeyboardAvoidingView>
+  );
+
   if (!scroll) {
-    return (
-      <View style={[{ flex: 1, backgroundColor: color.background }, inner]}>{children}</View>
+    return kav(
+      <View style={[{ flex: 1, backgroundColor: color.background }, inner]}>{children}</View>,
     );
   }
 
-  return (
+  return kav(
     <ScrollView
       style={{ flex: 1, backgroundColor: color.background }}
       contentContainerStyle={inner}
@@ -63,6 +75,6 @@ export function Screen({
       }
     >
       {children}
-    </ScrollView>
+    </ScrollView>,
   );
 }
