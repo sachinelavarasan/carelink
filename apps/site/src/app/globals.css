@@ -1,0 +1,67 @@
+@import 'tailwindcss';
+
+/* Soft teal-green brand palette. 600+ on white and white on 600+ meet WCAG AA. */
+@theme {
+  --color-brand-50: #effaf6;
+  --color-brand-100: #d8f2e9;
+  --color-brand-200: #b3e4d4;
+  --color-brand-300: #80cfb9;
+  --color-brand-400: #4cb39a;
+  --color-brand-500: #2a9880;
+  --color-brand-600: #1d7a68;
+  --color-brand-700: #196356;
+  --color-brand-800: #174f46;
+  --color-brand-900: #15413a;
+  --color-brand-950: #0a2622;
+
+  --color-ink: #1e293b;
+  --color-muted: #475569;
+}
+
+@theme inline {
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-heading), ui-serif, Georgia, serif;
+}
+
+@utility container-page {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 72rem;
+  padding-inline: 1rem;
+  @media (width >= 40rem) {
+    padding-inline: 1.5rem;
+  }
+  @media (width >= 64rem) {
+    padding-inline: 2rem;
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 6rem;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  body {
+    @apply bg-white font-sans text-ink antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display text-brand-950;
+    text-wrap: balance;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-brand-600);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+}
