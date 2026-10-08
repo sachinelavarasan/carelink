@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 480" width="560" height="480">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d8f2e9"/>
+      <stop offset="1" stop-color="#b3e4d4"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#196356"/>
+      <stop offset="1" stop-color="#4cb39a"/>
+    </linearGradient>
+  </defs>
+  <circle cx="290" cy="240" r="210" fill="url(#bg)"/>
+  <circle cx="460" cy="90" r="36" fill="#effaf6"/>
+  <circle cx="110" cy="380" r="22" fill="#effaf6"/>
+  <!-- stem -->
+  <path d="M290 420 C 288 340, 292 260, 300 170" stroke="#174f46" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <!-- leaves -->
+  <path d="M296 300 C 220 300, 170 250, 160 180 C 235 180, 285 230, 296 300 Z" fill="url(#leaf)"/>
+  <path d="M294 250 C 360 250, 410 205, 425 140 C 355 140, 305 185, 294 250 Z" fill="url(#leaf)"/>
+  <path d="M300 175 C 270 130, 275 85, 305 50 C 335 85, 335 130, 300 175 Z" fill="#2a9880"/>
+  <path d="M292 350 C 350 352, 392 325, 410 280 C 355 275, 310 300, 292 350 Z" fill="#1d7a68"/>
+  <!-- leaf veins -->
+  <path d="M290 292 C 250 270, 210 240, 178 195" stroke="#d8f2e9" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>
+  <path d="M300 244 C 340 225, 380 195, 410 155" stroke="#d8f2e9" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>
+  <!-- pot / mortar -->
+  <path d="M215 410 h150 l-18 50 h-114 z" fill="#ffffff" stroke="#174f46" stroke-width="5" stroke-linejoin="round"/>
+  <rect x="205" y="398" width="170" height="18" rx="9" fill="#ffffff" stroke="#174f46" stroke-width="5"/>
+  <!-- small globules -->
+  <circle cx="420" cy="410" r="9" fill="#ffffff" stroke="#1d7a68" stroke-width="3"/>
+  <circle cx="442" cy="428" r="7" fill="#ffffff" stroke="#1d7a68" stroke-width="3"/>
+  <circle cx="414" cy="436" r="6" fill="#ffffff" stroke="#1d7a68" stroke-width="3"/>
+</svg>
