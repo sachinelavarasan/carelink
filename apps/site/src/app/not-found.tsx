@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 
 import { ButtonLink } from '@/components/ButtonLink';
@@ -14,16 +15,27 @@ export default async function NotFound() {
 
   return (
     <section className="container-page py-16 sm:py-24">
-      <p className="text-sm font-semibold uppercase tracking-wider text-brand-700">Error 404</p>
-      <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">Page not found</h1>
-      <p className="mt-4 max-w-xl text-lg text-muted">
-        Sorry, we couldn’t find that page. It may have moved, or the address may be mistyped.
-      </p>
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <ButtonLink href="/">Go to the home page</ButtonLink>
-        <ButtonLink href="/treatments" variant="secondary">
-          Browse treatments
-        </ButtonLink>
+      <div className="grid items-center gap-10 md:grid-cols-[3fr_2fr]">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wider text-brand-700">Error 404</p>
+          <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">Page not found</h1>
+          <p className="mt-4 max-w-xl text-lg text-muted">
+            Sorry, we couldn’t find that page. It may have moved, or the address may be mistyped.
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <ButtonLink href="/">Go to the home page</ButtonLink>
+            <ButtonLink href="/treatments" variant="secondary">
+              Browse treatments
+            </ButtonLink>
+          </div>
+        </div>
+        <Image
+          src="/images/not-found.svg"
+          alt="Illustration of a tipped-over medicine bottle with spilled globules"
+          width={340}
+          height={180}
+          className="order-first mx-auto h-auto w-full max-w-72 md:order-0 md:max-w-sm"
+        />
       </div>
 
       <h2 className="mt-14 text-xl font-semibold">Treatment categories</h2>

@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1600 900" width="1600" height="900" preserveAspectRatio="xMidYMid slice">
+  <title>Homoeopathic medicine bottles and globules</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4fbf8"/>
+      <stop offset="1" stop-color="#e0f3ec"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".78" cy=".45" r=".55">
+      <stop offset="0" stop-color="#c6eadd" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#c6eadd" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Amber dropper bottle, centred on its body -->
+    <g id="bottle">
+      <path d="M-9-80a9 11 0 0 1 18 0v16H-9Z" fill="#2a9880"/>
+      <rect x="-13" y="-65" width="26" height="11" rx="3" fill="#1d7a68"/>
+      <rect x="-8" y="-54" width="16" height="12" fill="#c58a33"/>
+      <rect x="-27" y="-43" width="54" height="84" rx="13" fill="#dba552"/>
+      <rect x="-18" y="-18" width="36" height="30" rx="4" fill="#fffaf0" opacity=".75"/>
+      <path d="M-10-8h20M-10 2h13" stroke="#80cfb9" stroke-width="3" stroke-linecap="round"/>
+      <path d="M-19-34v62" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>
+    </g>
+
+    <!-- Sugar globule -->
+    <g id="pill">
+      <circle r="9" fill="#fff"/>
+      <circle r="8.5" fill="none" stroke="#a9dccb" stroke-width="1.5"/>
+      <circle cx="-3" cy="-3" r="2.6" fill="#eaf7f2"/>
+    </g>
+
+    <!-- Leaf with vein -->
+    <g id="leaf">
+      <path d="M0 0C18-30 58-42 92-32 72 0 32 14 0 0Z" fill="#4cb39a"/>
+      <path d="M4-2C30-14 56-22 84-29" stroke="#d8f2e9" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".8"/>
+    </g>
+
+    <!-- Small sprig: stem + three leaves -->
+    <g id="sprig">
+      <path d="M0 0C10-40 18-80 40-120" stroke="#2a9880" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <use href="#leaf" xlink:href="#leaf" transform="translate(8 -40) rotate(-35) scale(.7)"/>
+      <use href="#leaf" xlink:href="#leaf" transform="translate(18 -75) scale(-.6 .6) rotate(-20)"/>
+      <use href="#leaf" xlink:href="#leaf" transform="translate(36 -112) rotate(-70) scale(.55)"/>
+    </g>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect width="1600" height="900" fill="url(#glow)"/>
+
+  <!-- Soft background circles -->
+  <g fill="#d3efe5" opacity=".7">
+    <circle cx="1260" cy="420" r="300"/>
+    <circle cx="1530" cy="120" r="110"/>
+    <circle cx="140" cy="820" r="140"/>
+  </g>
+
+  <!-- Leaves -->
+  <g opacity=".5">
+    <use href="#sprig" xlink:href="#sprig" transform="translate(1040 760) scale(1.5)"/>
+    <use href="#sprig" xlink:href="#sprig" transform="translate(1530 600) scale(-1.3 1.3)"/>
+    <use href="#sprig" xlink:href="#sprig" transform="translate(1300 230) rotate(25) scale(.9)"/>
+    <use href="#sprig" xlink:href="#sprig" transform="translate(70 300) rotate(15) scale(.9)"/>
+    <use href="#leaf" xlink:href="#leaf" transform="translate(1440 840) rotate(-160) scale(1.1)"/>
+    <use href="#leaf" xlink:href="#leaf" transform="translate(880 120) rotate(20) scale(.8)"/>
+    <use href="#leaf" xlink:href="#leaf" transform="translate(420 860) rotate(-25) scale(.9)"/>
+    <use href="#leaf" xlink:href="#leaf" transform="translate(1580 380) rotate(170) scale(.8)"/>
+  </g>
+
+  <!-- Dropper bottles -->
+  <g opacity=".55">
+    <use href="#bottle" xlink:href="#bottle" transform="translate(1210 560) rotate(-8) scale(1.7)"/>
+    <use href="#bottle" xlink:href="#bottle" transform="translate(1400 470) rotate(9) scale(1.25)"/>
+    <use href="#bottle" xlink:href="#bottle" transform="translate(1030 520) rotate(-14) scale(.95)"/>
+    <use href="#bottle" xlink:href="#bottle" transform="translate(1480 780) rotate(18) scale(.9)"/>
+  </g>
+  <g opacity=".3">
+    <use href="#bottle" xlink:href="#bottle" transform="translate(190 130) rotate(-12) scale(.7)"/>
+    <use href="#bottle" xlink:href="#bottle" transform="translate(760 800) rotate(10) scale(.7)"/>
+  </g>
+
+  <!-- Scattered globules -->
+  <g opacity=".85">
+    <use href="#pill" xlink:href="#pill" x="1120" y="720"/>
+    <use href="#pill" xlink:href="#pill" x="1150" y="738"/>
+    <use href="#pill" xlink:href="#pill" x="1095" y="748"/>
+    <use href="#pill" xlink:href="#pill" x="1300" y="700"/>
+    <use href="#pill" xlink:href="#pill" x="1328" y="712"/>
+    <use href="#pill" xlink:href="#pill" x="1312" y="732"/>
+    <use href="#pill" xlink:href="#pill" x="1350" y="738"/>
+    <use href="#pill" xlink:href="#pill" x="1560" y="560"/>
+    <use href="#pill" xlink:href="#pill" x="1585" y="585"/>
+    <use href="#pill" xlink:href="#pill" x="1250" y="300"/>
+    <use href="#pill" xlink:href="#pill" x="1470" y="250"/>
+    <use href="#pill" xlink:href="#pill" x="1500" y="270"/>
+    <use href="#pill" xlink:href="#pill" x="980" y="660"/>
+    <use href="#pill" xlink:href="#pill" x="940" y="300"/>
+    <use href="#pill" xlink:href="#pill" x="1380" y="860"/>
+    <use href="#pill" xlink:href="#pill" x="1410" y="880"/>
+    <use href="#pill" xlink:href="#pill" x="1180" y="160"/>
+  </g>
+  <g opacity=".5">
+    <use href="#pill" xlink:href="#pill" x="260" y="230"/>
+    <use href="#pill" xlink:href="#pill" x="290" y="250"/>
+    <use href="#pill" xlink:href="#pill" x="120" y="520"/>
+    <use href="#pill" xlink:href="#pill" x="560" y="90"/>
+    <use href="#pill" xlink:href="#pill" x="660" y="840"/>
+    <use href="#pill" xlink:href="#pill" x="690" y="860"/>
+    <use href="#pill" xlink:href="#pill" x="40" y="700"/>
+  </g>
+</svg>

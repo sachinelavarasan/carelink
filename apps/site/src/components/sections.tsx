@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
@@ -33,7 +34,20 @@ export function PageHero({
   children?: ReactNode;
 }) {
   return (
-    <section className="border-b border-brand-100 bg-linear-to-b from-brand-50 to-white">
+    <section className="relative isolate overflow-hidden border-b border-brand-100">
+      {/* Same artwork as the home hero (already cached), kept quieter by a stronger overlay. */}
+      <Image
+        src="/images/hero-bg.svg"
+        alt=""
+        fill
+        priority
+        sizes="100vw"
+        className="-z-10 object-cover object-right"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 bg-white/85 lg:bg-transparent lg:bg-linear-to-r lg:from-white/95 lg:via-white/85 lg:to-white/40"
+      />
       <div className="container-page py-10 sm:py-14">
         {breadcrumbs && <div className="mb-6">{breadcrumbs}</div>}
         {eyebrow && (
@@ -157,7 +171,9 @@ export function CtaBanner({
 }) {
   return (
     <section aria-labelledby="cta-heading" className="container-page py-14 sm:py-20">
-      <div className="rounded-3xl bg-brand-800 px-6 py-10 text-center sm:px-12 sm:py-14">
+      <div className="relative isolate overflow-hidden rounded-3xl bg-brand-800 px-6 py-10 text-center sm:px-12 sm:py-14">
+        <BannerLineArt className="absolute -bottom-6 -left-4 -z-10 hidden h-52 w-52 sm:block" />
+        <BannerLineArt className="absolute -top-6 -right-6 -z-10 h-24 w-24 -scale-x-100 rotate-180 sm:-top-8 sm:h-48 sm:w-48" />
         <h2 id="cta-heading" className="text-2xl font-semibold text-white sm:text-3xl">
           {title}
         </h2>
@@ -176,5 +192,37 @@ export function CtaBanner({
         </div>
       </div>
     </section>
+  );
+}
+
+/** Faint white line drawing of a dropper bottle, globules and a leaf, for dark banners. */
+function BannerLineArt({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 200 200"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={3}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+      className={`text-white/15 ${className}`}
+    >
+      {/* Dropper bottle */}
+      <path d="M62 34a10 12 0 0 1 20 0v16H62Z" />
+      <rect x="58" y="50" width="28" height="12" rx="3" />
+      <path d="M64 62v12h16V62" />
+      <rect x="44" y="74" width="56" height="84" rx="14" />
+      <rect x="56" y="98" width="32" height="28" rx="4" />
+      {/* Globules */}
+      <circle cx="124" cy="150" r="8" />
+      <circle cx="144" cy="158" r="8" />
+      <circle cx="132" cy="132" r="8" />
+      <circle cx="160" cy="138" r="6" />
+      {/* Leaf */}
+      <path d="M118 104c8-30 34-44 62-40-6 28-30 42-62 40Z" />
+      <path d="M122 100c14-12 30-22 50-30" />
+    </svg>
   );
 }

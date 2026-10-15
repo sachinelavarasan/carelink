@@ -38,7 +38,21 @@ export default async function HomePage() {
       <JsonLd data={medicalClinicJsonLd()} />
 
       {/* Hero */}
-      <section className="overflow-hidden bg-linear-to-b from-brand-50 via-white to-white">
+      <section className="relative isolate flex min-h-[60vh] items-center overflow-hidden lg:min-h-[70vh]">
+        {/* Decorative background illustration (LCP element) */}
+        <Image
+          src="/images/hero-bg.svg"
+          alt="Homoeopathic medicine bottles and globules"
+          fill
+          priority
+          sizes="100vw"
+          className="-z-10 object-cover object-[75%_center] lg:object-center"
+        />
+        {/* Readability overlay: near-solid white behind the text, fading out towards the artwork */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 -z-10 bg-linear-to-b from-white/90 via-white/80 to-white/70 lg:bg-linear-to-r lg:from-white/95 lg:via-white/75 lg:to-white/10"
+        />
         <div className="container-page grid items-center gap-10 py-12 sm:py-16 lg:grid-cols-2 lg:py-20">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wider text-brand-700">

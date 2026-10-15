@@ -34,7 +34,13 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-IN" className={`${body.variable} ${heading.variable}`}>
+    // data-scroll-behavior lets Next.js turn off the CSS smooth scroll (globals.css) during
+    // route changes, so new pages start at the top instantly; in-page #anchors stay smooth.
+    <html
+      lang="en-IN"
+      data-scroll-behavior="smooth"
+      className={`${body.variable} ${heading.variable}`}
+    >
       <body className="flex min-h-dvh flex-col">
         <a
           href="#main"

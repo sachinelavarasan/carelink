@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="40 96 340 180" width="340" height="180">
+  <title>Illustration of a tipped-over medicine bottle with spilled globules</title>
+  <defs>
+    <g id="pill"><circle r="8" fill="#fff"/><circle r="7.5" fill="none" stroke="#80cfb9" stroke-width="1.6"/><circle cx="-2.5" cy="-2.5" r="2.2" fill="#eaf7f2"/></g>
+    <path id="leaf" d="M0 0C14-24 46-33 72-25 56 0 25 11 0 0Z" fill="#4cb39a"/>
+  </defs>
+
+  <circle cx="210" cy="186" r="84" fill="#d8f2e9"/>
+  <circle cx="300" cy="122" r="18" fill="#effaf6"/>
+  <ellipse cx="200" cy="246" rx="150" ry="14" fill="#174f46" opacity=".08"/>
+
+  <!-- Leaves -->
+  <use href="#leaf" xlink:href="#leaf" transform="translate(70 236) rotate(-50) scale(1.1)"/>
+  <use href="#leaf" xlink:href="#leaf" transform="translate(84 238) rotate(-15) scale(.8)" opacity=".8"/>
+
+  <!-- Tipped dropper bottle, lying on its side -->
+  <g transform="translate(150 212) rotate(-90)">
+    <rect x="-34" y="-46" width="68" height="92" rx="16" fill="#dba552"/>
+    <rect x="-23" y="-22" width="46" height="36" rx="4" fill="#fffaf0" opacity=".85"/>
+    <path d="M-12-10h24M-12 0h15" stroke="#80cfb9" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M-24-38v68" stroke="#fff" stroke-opacity=".5" stroke-width="6" stroke-linecap="round"/>
+    <rect x="-10" y="46" width="20" height="14" fill="#c58a33"/>
+  </g>
+  <!-- Loose cap and dropper bulb -->
+  <g transform="translate(262 236) rotate(-20)">
+    <rect x="-15" y="-12" width="30" height="12" rx="3" fill="#1d7a68"/>
+    <path d="M-10-12a10 13 0 0 1 20 0Z" fill="#2a9880"/>
+  </g>
+
+  <!-- Spilled globules -->
+  <use href="#pill" xlink:href="#pill" x="226" y="236"/>
+  <use href="#pill" xlink:href="#pill" x="244" y="228"/>
+  <use href="#pill" xlink:href="#pill" x="296" y="238"/>
+  <use href="#pill" xlink:href="#pill" x="316" y="232"/>
+  <use href="#pill" xlink:href="#pill" x="334" y="240"/>
+  <use href="#pill" xlink:href="#pill" x="282" y="214"/>
+  <use href="#pill" xlink:href="#pill" x="352" y="226"/>
+</svg>

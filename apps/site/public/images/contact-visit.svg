@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 480 360" width="480" height="360">
+  <title>Illustration of the clinic entrance with a location pin and medicine bottles</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#effaf6"/>
+      <stop offset="1" stop-color="#d8f2e9"/>
+    </linearGradient>
+    <g id="bottle">
+      <path d="M-7-86a7 9 0 0 1 14 0v12H-7Z" fill="#2a9880"/>
+      <rect x="-10" y="-74" width="20" height="9" rx="2" fill="#1d7a68"/>
+      <rect x="-6" y="-65" width="12" height="9" fill="#c58a33"/>
+      <rect x="-20" y="-56" width="40" height="56" rx="9" fill="#dba552"/>
+      <rect x="-13" y="-40" width="26" height="22" rx="3" fill="#fffaf0" opacity=".85"/>
+      <path d="M-14-50v42" stroke="#fff" stroke-opacity=".5" stroke-width="4" stroke-linecap="round"/>
+    </g>
+    <g id="pill"><circle r="6" fill="#fff"/><circle r="5.6" fill="none" stroke="#a9dccb" stroke-width="1.2"/></g>
+    <path id="leaf" d="M0 0C14-24 46-33 72-25 56 0 25 11 0 0Z" fill="#4cb39a"/>
+  </defs>
+
+  <rect width="480" height="360" rx="24" fill="url(#bg)"/>
+  <circle cx="390" cy="70" r="60" fill="#c6eadd" opacity=".7"/>
+  <!-- Ground -->
+  <rect x="0" y="300" width="480" height="60" fill="#c6eadd" opacity=".6"/>
+
+  <!-- Clinic building -->
+  <g transform="translate(150 300)">
+    <rect x="-100" y="-180" width="200" height="180" rx="10" fill="#fff" stroke="#174f46" stroke-width="4"/>
+    <path d="M-112-178h224l-14-30h-196Z" fill="#2a9880" stroke="#174f46" stroke-width="4" stroke-linejoin="round"/>
+    <!-- Sign: leaf mark -->
+    <rect x="-46" y="-162" width="92" height="30" rx="8" fill="#d8f2e9"/>
+    <path d="M0-136c0-8 4-14 11-16-1 9-5 14-11 16Zm0 0c0-8-4-14-11-16 1 9 5 14 11 16Z" fill="#1d7a68"/>
+    <!-- Door -->
+    <rect x="-28" y="-96" width="56" height="96" rx="6" fill="#d8f2e9" stroke="#174f46" stroke-width="4"/>
+    <circle cx="16" cy="-46" r="3.5" fill="#174f46"/>
+    <!-- Windows -->
+    <rect x="-84" y="-110" width="40" height="40" rx="6" fill="#e9f7f2" stroke="#174f46" stroke-width="3.5"/>
+    <rect x="44" y="-110" width="40" height="40" rx="6" fill="#e9f7f2" stroke="#174f46" stroke-width="3.5"/>
+  </g>
+
+  <!-- Map pin -->
+  <g transform="translate(330 150)">
+    <ellipse cx="0" cy="62" rx="22" ry="6" fill="#174f46" opacity=".15"/>
+    <path d="M0 58S-38 18-38-10a38 38 0 0 1 76 0C38 18 0 58 0 58Z" fill="#1d7a68"/>
+    <circle cx="0" cy="-10" r="14" fill="#fff"/>
+  </g>
+
+  <!-- Foreground bottles, plant and globules -->
+  <use href="#bottle" xlink:href="#bottle" transform="translate(388 304) scale(1.05)"/>
+  <use href="#bottle" xlink:href="#bottle" transform="translate(432 304) scale(.78)"/>
+  <g transform="translate(286 300)">
+    <use href="#leaf" xlink:href="#leaf" transform="rotate(-60) scale(.7)"/>
+    <use href="#leaf" xlink:href="#leaf" transform="scale(-.6 .6) rotate(-55)"/>
+  </g>
+  <use href="#pill" xlink:href="#pill" x="356" y="320"/>
+  <use href="#pill" xlink:href="#pill" x="370" y="328"/>
+  <use href="#pill" xlink:href="#pill" x="344" y="330"/>
+</svg>

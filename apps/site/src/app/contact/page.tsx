@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 import { AppointmentForm } from '@/components/AppointmentForm';
 import { ChatIcon, ClockIcon, MailIcon, MapPinIcon, PhoneIcon } from '@/components/icons';
 import { JsonLd } from '@/components/JsonLd';
@@ -101,13 +103,22 @@ export default async function ContactPage() {
             </div>
           </address>
 
-          {contact.mapUrl && (
+          {/* The map once mapUrl is set in src/config/site.ts; a clinic illustration until then. */}
+          {contact.mapUrl ? (
             <iframe
               src={contact.mapUrl}
               title={`Map showing the location of ${siteConfig.name}`}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
               className="aspect-4/3 w-full rounded-2xl border-0"
+            />
+          ) : (
+            <Image
+              src="/images/contact-visit.svg"
+              alt="Illustration of the clinic entrance with a location pin and medicine bottles"
+              width={480}
+              height={360}
+              className="h-auto w-full rounded-2xl"
             />
           )}
         </section>

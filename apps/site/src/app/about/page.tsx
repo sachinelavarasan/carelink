@@ -41,18 +41,23 @@ export default function AboutPage() {
       />
 
       <section aria-labelledby="doctor-heading" className="container-page py-14 sm:py-20">
-        <div
-          className={
-            doctor.photo ? 'grid items-start gap-10 md:grid-cols-[2fr_3fr] lg:gap-16' : 'max-w-3xl'
-          }
-        >
-          {doctor.photo && (
+        <div className="grid items-start gap-10 md:grid-cols-[2fr_3fr] lg:gap-16">
+          {/* The doctor's photo once set in src/config/site.ts; a clinic illustration until then. */}
+          {doctor.photo ? (
             <Image
               src={doctor.photo}
               alt={`Portrait of ${doctor.name}`}
               width={400}
               height={480}
               className="mx-auto h-auto w-full max-w-sm rounded-3xl"
+            />
+          ) : (
+            <Image
+              src="/images/clinic-shelf.svg"
+              alt="Illustration of homoeopathic medicine bottles, a globule jar and a plant on clinic shelves"
+              width={400}
+              height={480}
+              className="mx-auto h-auto w-full max-w-xs rounded-3xl md:max-w-sm"
             />
           )}
           <div>
